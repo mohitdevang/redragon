@@ -1,0 +1,107 @@
+@charset "utf-8";
+/* CSS Document */
+.login_backgrnd{
+    background: -moz-linear-gradient(45deg, rgba(153,218,255,1) 0%, rgba(1,123,128,1) 100%); /* ff3.6+ */
+    background: -webkit-gradient(linear, left bottom, right top, color-stop(0%, rgba(153,218,255,1)), color-stop(100%, rgba(1,123,128,1))); /* safari4+,chrome */
+    background: -webkit-linear-gradient(45deg, rgba(153,218,255,1) 0%, rgba(1,123,128,1) 100%); /* safari5.1+,chrome10+ */
+    background: -o-linear-gradient(45deg, rgba(153,218,255,1) 0%, rgba(1,123,128,1) 100%); /* opera 11.10+ */
+    background: -ms-linear-gradient(45deg, rgba(153,218,255,1) 0%, rgba(1,123,128,1) 100%); /* ie10+ */
+    background: linear-gradient(45deg, rgba(153,218,255,1) 0%, rgba(1,123,128,1) 100%); /* w3c */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#017B80', endColorstr='#99DAFF',GradientType=1 ); /* ie6-9 */ 
+	}
+	.logo-img img {
+	width:20%;
+	}
+	.error {
+font-size:15px;
+color:red;
+padding-top:10px;
+}
+.breadcrumb li:active {
+color :#777777;
+}
+.status_en {
+color:#00FF00 !important;
+}
+.fadeRed{
+color:#ff7b7b;
+}
+/*************** Login ************/
+
+.form-signin {
+    max-width: 500px;
+    padding: 19px 29px 29px;
+    margin: 0 auto;
+    background-color: #fff;
+	
+    border: 1px solid #e5e5e5;
+    -webkit-border-radius: 5px;
+       -moz-border-radius: 5px;
+            border-radius: 5px;
+    -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+       -moz-box-shadow: 0 1px 2px rgba(0,0,0,.05);
+            box-shadow: 0 1px 2px rgba(0,0,0,.05);
+			
+	font-family:Tahoma, Geneva, sans-serif;
+	color:#00A2D1;
+	font-weight:lighter;
+}
+
+.form-signin .form-signin-heading{
+    color:#00A2D1;
+}
+.form-signin input[type="text"],
+.form-signin input[type="password"],
+.form-signin input[type="email"] {
+    font-size: 16px;
+    height: 45px;
+    padding: 7px 9px;
+}
+.successlogin{
+text-align: center;
+}
+.signin-form, .body-container
+{
+	/*border:solid red 1px;*/
+	margin-top:110px;
+}
+.navbar-brand{
+	font-family:"Lucida Handwriting";
+}
+#btn-submit{
+	height:45px;
+}
+.form-group article {
+display: inline-block;
+float: right;
+cursor:pointer;
+}
+#forgot {
+display:none;
+}
+/*********/
+/*** Auto Complete ****/
+#customer-list{float:left;list-style:none;margin:0;padding:0;width:100%;position:absolute;z-index:99;}
+#customer-list li{padding: 10px; background:#FAFAFA;border-bottom:#F0F0F0 1px solid;}
+#customer-list li:hover{background:#F0F0F0;}
+#suggesstion-box {position:relative;}
+#suggesstion-box1 {position:relative;}
+/*********/
+#example_filter label,#example_paginate{
+	float:right !important;
+}
+.dataTables_empty{
+    text-align: center;
+}
+.meta_sugg li {
+color: #1BBB9C;
+font-size: 16px;
+font-weight: 600;
+}
+form a,form a:hover,form a:visited,form a:active,form a:focus{
+color: #2d2d2d;
+text-decoration: none;
+}
+.ajax-loader{
+display:none;
+}
