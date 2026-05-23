@@ -14,10 +14,13 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $fillable = [
         'unique_id',
+        'registration_serial',
         'seq_pin',
         'name',
         'email',
         'phone',
+        'dial_code',
+        'country_id',
         'country',
         'password',
         'current_login_at',
@@ -27,7 +30,24 @@ class User extends Authenticatable implements MustVerifyEmail
         'adhar_no',
         'upgrade_active_date',
         'invest_amount',
-        'income_limit'
+        'income_limit',
+        'address',
+        'city',
+        'state',
+        'pincode',
+        'trc_address',
+        'moninee',
+        'bank_name',
+        'ac_holder_name',
+        'ac_number',
+        'ifsc',
+        'gpay',
+        'phhonepay',
+        'Paytm',
+        'kys_status',
+        'package_id',
+        'status',
+        'active_date',
     ];
 
     protected $hidden = [

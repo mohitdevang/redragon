@@ -38,6 +38,11 @@ use App\Models\UserAd;
 use DateTime;
 use PHPMailer\PHPMailer;
 use Carbon\Carbon;
+use App\Support\IncomeEngine;
+use App\Support\PackagePurchaseEngine;
+use App\Services\CommunitySerialMembers;
+use App\Models\WhatsappSetting;
+use App\Services\WhatsApp\OtpService;
 class ProfileController extends Controller
 {
     /**
@@ -115,6 +120,20 @@ if($Community_balance){
 
 
  $data['active_direct_user']=UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['parent_id',$id],['status','!=','inactive']])->count();
+
+      $data['direct_partner_count'] = UserParent::query()->where('parent_id', $id)->count();
+
+      $myParentRow = UserParent::query()->where('user_id', $id)->first();
+      if ($myParentRow) {
+          $teamQuery = UserParent::query()
+              ->join('users', 'users.unique_id', '=', 'user_parents.user_id')
+              ->where('user_parents.id', '>', $myParentRow->id);
+          $data['total_team_partner'] = (clone $teamQuery)->count();
+          $data['active_team_partner'] = (clone $teamQuery)->where('users.status', 'active')->count();
+      } else {
+          $data['total_team_partner'] = 0;
+          $data['active_team_partner'] = 0;
+      }
 
       $data['active_downline_user']=array_sum($this->display_children(Auth::guard()->user()->unique_id,0));
 
@@ -245,7 +264,7 @@ if(Auth::guard()->user()->expire_date>=date('Y-m-d') && $request->video_id!=0){
 
  
     
-    if($id!='999999'){
+    if($id!='999999' && IncomeEngine::enabled()){
  $this->get_parent_user_byads($id,1);
 }
 
@@ -420,23 +439,20 @@ $html=' <div class="row">
     }
 
        public function community_member(){
-     
-        
-         $data['type']='Upline Member';
+         $user = Auth::guard()->user();
+         $data['type'] = 'Global Community Upline';
+         $data['members'] = CommunitySerialMembers::upline($user, 50);
 
-
-
-         return view('page_templates.community_member',$data); 
+         return view('page_templates.community_serial_list', $data);
     }
 
 
      public function community_member_downline(){
-     
-        
-        $id=Auth::guard()->user()->unique_id;
-        $user=UserParent::where('user_id',$id)->first();
-         $data['all_user']=UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where('user_parents.id','>',$user->id)->get();
-          return view('page_templates.allmember',$data);
+         $user = Auth::guard()->user();
+         $data['type'] = 'Global Community Downline';
+         $data['members'] = CommunitySerialMembers::downline($user, 50);
+
+         return view('page_templates.community_serial_list', $data);
     }
     
 
@@ -476,7 +492,12 @@ return view('page_templates.active_pin_view',$data);
  
 
     public function active_pin(Request $request){
-        
+        if (! PackagePurchaseEngine::enabled()) {
+            Session::flash('danger', 'Package activation / plan purchase is disabled by admin.');
+
+            return redirect()->back();
+        }
+
         $pin = MemberPin::where('id','=',$request->hpinid)->first();
 if($pin->type==1){
          $search = User::where('unique_id','=',$request->member_unique_id)->first();
@@ -556,6 +577,9 @@ $this->get_parent_user_for_reward($request->member_unique_id,1);
 
 
  public function get_parent_user($user_id,$level_id){
+  if (! IncomeEngine::enabled()) {
+      return true;
+  }
   if($level_id<=9){
   $get_parent = UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['user_parents.user_id',$user_id],['status','!=','inactive'],['expire_date','>=',date('Y-m-d')]])->orderBy('active_date', 'ASC')->first();
 
@@ -619,6 +643,9 @@ return true;
   //************************.
 
  public function get_parent_user_for_reward($user_id,$level_id){
+  if (! IncomeEngine::enabled()) {
+      return true;
+  }
   if($level_id<=9){
   $get_parent = UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['user_parents.user_id',$user_id],['status','!=','inactive'],['expire_date','>=',date('Y-m-d')]])->orderBy('active_date', 'ASC')->first();
 
@@ -697,6 +724,9 @@ return true;
  }
  
  public function get_autopull_income($member_id){
+  if (! IncomeEngine::enabled()) {
+      return true;
+  }
      
 $member=UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['user_id',$member_id],['status','!=','inactive']])->first();
 
@@ -806,7 +836,10 @@ return true;
 }
 
 public function reward_check($member_id){
-   
+  if (! IncomeEngine::enabled()) {
+      return true;
+  }
+
    $reward_plan=RewardPlan::get();
 foreach ($reward_plan as $rplan) {
    
@@ -1078,6 +1111,20 @@ public function transfer_pin_member(Request $request){
 
 public function upload_kyc_view(){
 $data['kyc']=User::where('unique_id',Auth::guard()->user()->unique_id)->first();
+$user = $data['kyc'];
+$dial = preg_replace('/\D+/', '', (string) ($user->dial_code ?? ''));
+$phone = preg_replace('/\D+/', '', (string) ($user->phone ?? ''));
+$full = $dial.$phone;
+$data['masked_phone'] = $full ? ('+'.substr($full, 0, max(0, strlen($full) - 5)).str_repeat('X', min(5, strlen($full)))) : '';
+$data['whatsapp_settings'] = WhatsappSetting::current();
+
+// Always require a fresh OTP verification on each visit before wallet update.
+session()->forget(['address_otp_verified', 'address_otp_verified_at', 'address_verification_token']);
+$data['address_otp_verified'] = false;
+$data['require_address_otp'] = (bool) $data['whatsapp_settings']->require_otp_address_update;
+$data['otp_resend_seconds'] = (int) ($data['whatsapp_settings']->otp_resend_cooldown_seconds ?? 120);
+$data['otp_expiry_minutes'] = (int) ($data['whatsapp_settings']->otp_expiry_minutes ?? 5);
+$data['app_base'] = rtrim(request()->getBasePath(), '/');
 
  return view('page_templates.kyc_view',$data);
 
@@ -1093,45 +1140,45 @@ $data['profile']=User::where('unique_id',Auth::guard()->user()->unique_id)->firs
 
 
 public function update_kyc(Request $request){
+    $user = Auth::guard()->user();
+    $settings = WhatsappSetting::current();
+    $token = trim((string) $request->input('address_verification_token', ''));
+    if ($settings->require_otp_address_update) {
+        $otpService = app(OtpService::class);
+        if (! $token || ! $user || ! $otpService->assertAddressToken($user->unique_id, $token)) {
+            session()->forget(['address_otp_verified', 'address_otp_verified_at', 'address_verification_token']);
+            Session::flash('danger', 'Please verify OTP before updating your wallet address.');
 
-    $data=array(
-        'bank_name'=>$request->bank_name,
-         'ac_holder_name'=>$request->ac_holder_name,
-          'ac_number'=>$request->ac_number,
-           'ifsc'=>$request->ifsc,
-            'gpay'=>$request->gpay,
-             'phhonepay'=>$request->phhonepay,
-             'Paytm'=>$request->Paytm,
-             'kys_status'=>'active'            
-
-    );
-
-
-
-       if($request->hasFile('pan_photo'))
-        {
-            $destinationPath = 'uploads';
-            $file = $request->file('pan_photo');
-            $original_name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-            $extension = $file->getClientOriginalExtension();
-            $filename=time().rand(100,999).$original_name.'.'.$extension;
-            
-            $file->move(
-                config('services.new_root_path').$destinationPath, $filename
-            );
-
-            $data['pan_photo'] = $filename;
-
+            return redirect()->route('upload_kyc_view');
         }
+    }
+
+    if (! is_string($request->trc_address) || trim($request->trc_address) === '') {
+        Session::flash('danger', 'USDT (BEP-20) wallet address is required.');
+
+        return redirect()->route('upload_kyc_view');
+    }
+
+    $data = [
+        'trc_address' => strip_tags(trim($request->trc_address)),
+    ];
 
 
 
+         if (! $user || (int) $request->hid !== (int) $user->id) {
+             Session::flash('danger', 'Invalid update request.');
 
+             return redirect()->route('upload_kyc_view');
+         }
 
-         $result = User::where('id','=',$request->hid)->update($data);
+         $result = User::where('id', $user->id)->update($data);
 
           if($result){
-           Session::flash('success', 'Kyc Updated successfully.'); 
+           if ($settings->require_otp_address_update && ! empty($token)) {
+               app(OtpService::class)->consumeAddressToken($user->unique_id, $token);
+           }
+           session()->forget(['address_otp_verified', 'address_otp_verified_at', 'address_verification_token']);
+           Session::flash('success', 'Wallet address updated successfully.'); 
         } else {
            Session::flash('danger', 'Error encounterd');
         }
@@ -1544,13 +1591,13 @@ public function active_multiple_user($slug,$pack){
 
 
   
- $this->get_direct_income($au->unique_id,$package->price);
-   $date=date('Y-m-d');
- $this->get_parent_user_byads($au->unique_id,1);
-for ($i=2; $i <5 ; $i++) { 
-    // code...
-     $this->entry_magic_pool($au->unique_id,$i,1,1);
-}
+ if (IncomeEngine::enabled()) {
+     $this->get_direct_income($au->unique_id, $package->price, $package->id);
+     $this->get_parent_user_byads($au->unique_id, 1, $package->price, $package->id);
+     for ($i = 2; $i < 5; $i++) {
+         $this->entry_magic_pool($au->unique_id, $i, 1, 1);
+     }
+ }
 
    //DB::commit();
 
@@ -1579,18 +1626,31 @@ for ($i=2; $i <5 ; $i++) {
 }
 
 public function active_pin_from_wallet(Request $request){
+    if (! PackagePurchaseEngine::enabled()) {
+        Session::flash('danger', 'Package activation / plan purchase is disabled by admin.');
+
+        return redirect()->route('active_pin_from_wallet_view');
+    }
         
                $package=DB::table('package')->where('id',$request->pack)->first(); 
 
               
       
    if($request->pack!=1){
-    ///upgrade package
-$result=$this->entry_magic_pool($request->member_unique_id,$package->id,1,1);
+    User::where('unique_id', $request->member_unique_id)->update([
+        'package_id' => $package->id,
+        'status' => 'active',
+        'active_date' => date('Y-m-d H:i:s'),
+    ]);
+    if (IncomeEngine::enabled()) {
+        $result = $this->entry_magic_pool($request->member_unique_id, $package->id, 1, 1);
+    } else {
+        $result = true;
+    }
 
-if($result){
+    if ($result) {
        Session::flash('success', 'Member id activated successfully...'); 
-}
+    }
 }else{
          $search = User::where('unique_id','=',$request->member_unique_id)->first();
               
@@ -1613,9 +1673,11 @@ if($result){
       
 
       
-        // $result2 =  User::where('unique_id','=',$request->member_unique_id)->update(array('status'=>'active','active_date'=>date('Y-m-d H:i:s'),'package_id'=>$package->id));
-         
-         
+        $result2 = User::where('unique_id', '=', $request->member_unique_id)->update([
+            'status' => 'active',
+            'active_date' => date('Y-m-d H:i:s'),
+            'package_id' => $package->id,
+        ]);
            
   //wallet Deduct.....
    $fetch_primary_wallet=DB::table('wallet_secondary')->select('user_id','balance')->where('user_id',Auth::guard()->user()->unique_id)->first();
@@ -1650,15 +1712,13 @@ if($result){
 
 
   
- $this->get_direct_income($request->member_unique_id,$package->price,$package->id);
-   $date=date('Y-m-d');
- $this->get_parent_user_byads($request->member_unique_id,1,$package->price,$package->id);
-
-
- //$this->entry_magic_pool($request->member_unique_id,2,1,1);
- $result=$this->entry_magic_pool($request->member_unique_id,$package->id,1,1);
-   //DB::commit();
-
+ if (IncomeEngine::enabled()) {
+     $this->get_direct_income($request->member_unique_id, $package->price, $package->id);
+     $this->get_parent_user_byads($request->member_unique_id, 1, $package->price, $package->id);
+     $result = $this->entry_magic_pool($request->member_unique_id, $package->id, 1, 1);
+ } else {
+     $result = (bool) $result2;
+ }
 
        
         if($result){
@@ -1688,7 +1748,13 @@ if($result){
 
 public function entry_magic_pool($user_id, $pack_id, $level, $cycle)
 {
-    
+    if (! PackagePurchaseEngine::enabled()) {
+        return false;
+    }
+
+    if (! IncomeEngine::enabled()) {
+        return true;
+    }
 
     $package = DB::table('package')->where('id', $pack_id)->first();
     
@@ -1935,8 +2001,10 @@ else{
 
 
       public function get_direct_income($user_id,$price,$package_id){
+  if (! IncomeEngine::enabled()) {
+      return true;
+  }
 
- 
   $get_parent = UserParent::where('user_parents.user_id',$user_id)->first();
 $user=User::where([['unique_id',$get_parent->parent_id],['status','active']])->first();
 
@@ -2010,6 +2078,9 @@ return true;
 
 
  public function get_parent_user_byads($user_id,$level_id,$price,$package_id){
+  if (! IncomeEngine::enabled()) {
+      return true;
+  }
   if($level_id<=10){
 
        $get_parent = UserParent::select('parent_id','user_id')->where([['user_id',$user_id]])->first();
@@ -2086,6 +2157,11 @@ return true;
 
 
 function get_community_bonus(){
+    if (! IncomeEngine::enabled()) {
+        \Log::info('Community bonus skipped — income engine disabled.');
+
+        return;
+    }
     \Log::info("Community bonus Upload started..");
     $wallet=DB::table('wallet_community')->where('balance','>',0)->get();
     foreach ($wallet as $wall) {
@@ -2097,11 +2173,11 @@ function get_community_bonus(){
 
          $usr = User::select('parent_id')->where('unique_id', $wall->user_id)->first();
 
-$this->get_upline_member($wall->user_id,1,$amount,$wall->user_id,$wall->balance,$usr->package_id);
+$this->get_upline_member($wall->user_id,50,$amount,$wall->user_id,$wall->balance,$usr->package_id);
 
 
 
-$this->get_downline_member($wall->user_id,1,$amount,$wall->user_id,$wall->balance,$usr->package_id);
+$this->get_downline_member($wall->user_id,50,$amount,$wall->user_id,$wall->balance,$usr->package_id);
 
 DB::table('wallet_community')->where('user_id',$wall->user_id)->update(array('balance'=>0));
        
@@ -2116,15 +2192,15 @@ public function get_downline_member($user_unique_id, $level, $amount, $from, $to
 {
     echo 'from ' . $from . '<br>';
 
-    // Current user
     $usr = User::where('unique_id', $user_unique_id)->first();
-    if (!$usr) return false;
+    if (! $usr || ! $usr->registration_serial) {
+        return false;
+    }
 
-    // Get ACTIVE downline users
-    $users = User::where('id', '>', $usr->id)
+    $users = User::where('registration_serial', '>', $usr->registration_serial)
         ->where('status', 'active')
-        ->orderBy('id', 'asc')
-        ->limit(50)
+        ->orderBy('registration_serial', 'asc')
+        ->limit($level)
         ->get();
 
     $slno = 1;
@@ -2142,9 +2218,9 @@ if($package_id==1){
 }
 
 if($pay==0){
-      DB::table('commision_community')->insert([
+            DB::table('commision_community')->insert([
                 'member_id'        => $us->unique_id,
-                'rank'             => 'community-upline',
+                'rank'             => 'community-downline',
                 'level'            => $slno,
                 'target'           => '',
                 'type'             => 'not',
@@ -2157,23 +2233,21 @@ if($pay==0){
 
       continue;
 }
-        // Check duplicate entry
         $exist = DB::table('commision_community')
             ->where([
                 ['member_id', $us->unique_id],
                 ['created_date', date('Y-m-d')],
                 ['direct_member_id', $from],
-                ['rank', 'community-upline']
+                ['rank', 'community-downline']
             ])->first();
 
         if (!$exist) {
 
             echo $slno . '<br>';
 
-            // Insert commission record
             DB::table('commision_community')->insert([
                 'member_id'        => $us->unique_id,
-                'rank'             => 'community-upline',
+                'rank'             => 'community-downline',
                 'level'            => $slno,
                 'target'           => '',
                 'type'             => 'credit',
@@ -2184,7 +2258,6 @@ if($pay==0){
                 'direct_member_id' => $from
             ]);
 
-            // ✅ CREDIT WALLET TO DOWNLINE USER (IMPORTANT FIX)
             $wallet = DB::table('wallet_primary')
                 ->where('user_id', $us->unique_id)
                 ->first();
@@ -2212,15 +2285,15 @@ public function get_upline_member($user_unique_id, $level, $amount, $from, $tota
 {
     echo 'from ' . $from . '<br>';
 
-    // Current user
     $usr = User::where('unique_id', $user_unique_id)->first();
-    if (!$usr) return false;
+    if (! $usr || ! $usr->registration_serial) {
+        return false;
+    }
 
-    // Get ACTIVE upline users
-    $users = User::where('id', '<', $usr->id)
+    $users = User::where('registration_serial', '<', $usr->registration_serial)
         ->where('status', 'active')
-        ->orderBy('id', 'desc') // nearest upline first
-        ->limit(50)
+        ->orderBy('registration_serial', 'desc')
+        ->limit($level)
         ->get();
 
     $slno = 1;
@@ -2343,13 +2416,11 @@ $this->get_upline_member($parent_ids,$level_id+1);
 }
 
  function get_level_income($parent, $level,$date,$earner,$max_level) 
-
 {
+  if (! IncomeEngine::enabled()) {
+      return;
+  }
 
-
-  //  if($level <= 10 ){
-
-   
 $plan=CommisionPlan::where('level','=',$level)->first();
 
 
@@ -2409,6 +2480,10 @@ DB::table('commision_level')->insert(array('member_id'=>$earner,'plan'=>$plan->i
  public function active_pin_from_wallet_view(Request $request){
        $data['pack']=DB::table('package')
     ->where('id', '>', Auth::guard()->user()->package_id)
+    ->where(function ($q) {
+        $q->where('status', 'active')->orWhereNull('status');
+    })
+    ->orderBy('id')
     ->limit(1)
     ->get();
            $wallet=DB::table('wallet_secondary')->select('user_id','balance')->where('user_id',Auth::guard()->user()->unique_id)->first();
@@ -2419,6 +2494,8 @@ DB::table('commision_level')->insert(array('member_id'=>$earner,'plan'=>$plan->i
       }else{
            $data['balance']=0;
       }
+
+      $data['package_purchase_enabled'] = PackagePurchaseEngine::enabled();
       
      
 
@@ -2426,6 +2503,13 @@ DB::table('commision_level')->insert(array('member_id'=>$earner,'plan'=>$plan->i
        return view('page_templates.active_from_wallet',$data);
        
      }
+
+    public function dismissLoginModal(Request $request)
+    {
+        $request->session()->put('user_login_modal_dismissed', true);
+
+        return response()->json(['success' => true]);
+    }
      
     
     public function secondary_wallet_transaction_history(){

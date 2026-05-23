@@ -449,7 +449,7 @@
                                 <div class="contact-icon-bg">📧</div>
                             </div>
                             <h3>Email Support</h3>
-                            <p class="contact-main">support@crowdfund.com</p>
+                            <p class="contact-main">support@redragon.world/</p>
                             <p class="contact-sub">Response within 1 hour</p>
                             <a href="mailto:support@crowdfund.com" class="contact-link">Send Email →</a>
                         </div>

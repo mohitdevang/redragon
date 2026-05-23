@@ -331,12 +331,11 @@ $(function() {
 
 <script>
 
-$(function(){ 
-
-   $("html").niceScroll({cursorcolor:"#1BBB9C",cursorborder:"none",cursorwidth: "10px"});
-
-   $(".side-nav").niceScroll({cursorcolor:"#1BBB9C",cursorborder:"none"});
-
+$(function(){
+   if ($.fn.niceScroll) {
+      $("html").niceScroll({cursorcolor:"#D81518",cursorborder:"none",cursorwidth: "10px"});
+      $(".side-nav").niceScroll({cursorcolor:"#D81518",cursorborder:"none"});
+   }
 });
 
 </script>

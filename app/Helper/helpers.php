@@ -442,10 +442,14 @@ function display_children($parent, $level)
  
  
 function get_total_investment($user_id){
-
+if (\Illuminate\Support\Facades\Schema::hasTable('user_invest_amt')) {
 $userIncomes = DB::table('user_invest_amt')
     ->where('user_id', $user_id)
     ->sum('amount');
+} else {
+    $user = \App\Models\User::query()->where('unique_id', $user_id)->first();
+    $userIncomes = $user ? (float) ($user->invest_amount ?? 0) : 0;
+}
 
 return $userIncomes;
 

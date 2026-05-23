@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $setting->title }} | @yield('title')</title>
     <link rel="icon" href="{{url('/')}}/public/uploads/{{$setting->favicon}}" type="image/png">
     <!-- Custom Css -->
@@ -50,6 +51,7 @@
 
 
                 @include('elements.user_top_bar')
+                @include('elements.user_login_modal')
                 @yield('content')
 
                 @include('elements.user_footer')

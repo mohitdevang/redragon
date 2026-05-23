@@ -148,8 +148,6 @@
                                 </table>
                             </form>
 
-                            {{ $member->links() }}
-
                         </div>
                     </div>
                 </div>

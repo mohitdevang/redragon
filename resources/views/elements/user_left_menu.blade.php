@@ -2,7 +2,7 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
         <img src="{{url('/')}}/public/admin/assets/images/svg/logo.svg" alt="Logo" class="logo-img">
-        <div class="user-info">
+        <div class="user-info d-none">
             <strong>{{ Auth::guard()->user()->name }}</strong><br>
             <small>{{ Auth::guard()->user()->unique_id }}</small>
         </div>
@@ -59,7 +59,7 @@
                             class="submenu-dot"></span>Direct Partner</a>
                 </li>
                 <li class="submenu-item"><a href="{{ route('all_member') }}" class="submenu-link"> <span
-                            class="submenu-dot"></span>Lavel Partner</a>
+                            class="submenu-dot"></span>Level Partner</a>
                 </li>
                 <li class="submenu-item"><a href="{{ route('community_member') }}" class="submenu-link"> <span
                             class="submenu-dot"></span>Global Community

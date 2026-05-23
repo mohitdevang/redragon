@@ -36,8 +36,8 @@
 				
 					<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -55,8 +55,8 @@
 							
 							<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -76,8 +76,8 @@
 							
 							<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -123,8 +123,8 @@
 							
 									<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -143,8 +143,8 @@
 							
 									<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -163,8 +163,8 @@
 							
 									<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -183,8 +183,8 @@
 							
 									<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -203,8 +203,8 @@
 							
 									<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>
@@ -222,8 +222,8 @@
 							
 									<li>
 								<div class="panel_division">
-									<div class="panel panel-green" style="background-color:#b31313;border-color: #b31313;">
-									<div class="panel-heading" style="background-color:#b31313;border-color: #b31313;">
+									<div class="panel panel-green">
+									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
 												<i class="fa fa-tasks fa-5x"></i>

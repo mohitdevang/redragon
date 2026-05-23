@@ -42,7 +42,12 @@ class MemberController extends Controller
     }
 
     public function member_kyc(){
-        $data['member']=UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->get();
+        $data['member'] = User::query()
+            ->select('id', 'name', 'unique_id', 'registration_serial', 'trc_address')
+            ->orderByDesc('registration_serial')
+            ->orderByDesc('id')
+            ->get();
+
         return view('admin.members.member_kyc',$data);
     }
 

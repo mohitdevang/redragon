@@ -34,6 +34,13 @@ use App\Models\UserAd;
 use Illuminate\Support\Facades\Hash;
 use PHPMailer\PHPMailer;
 use Illuminate\Support\Facades\Auth;
+use App\Support\IncomeEngine;
+use App\Support\RegistrationSerialAllocator;
+use App\Models\Country;
+use App\Services\WhatsApp\OtpService;
+use App\Services\WhatsApp\MetaCloudClient;
+use App\Services\WhatsApp\WelcomeTemplateParams;
+use App\Models\WhatsappSetting;
 
 
 class PageController extends Controller
@@ -69,13 +76,47 @@ class PageController extends Controller
 
 
 public function show_register_form(){
-   
-   return view('page_templates.register'); 
+   $data['countries'] = Country::active()->orderBy('name')->limit(25)->get();
+   $data['whatsapp_settings'] = \App\Models\WhatsappSetting::current();
+   $data['app_base'] = rtrim(request()->getBasePath(), '/');
+
+   return view('page_templates.register', $data);
+}
+
+public function search_countries(Request $request){
+    $q = trim((string) $request->get('q', ''));
+    $query = Country::active()->orderBy('name');
+
+    if ($q !== '') {
+        $query->where(function ($builder) use ($q) {
+            $builder->where('name', 'like', '%'.$q.'%')
+                ->orWhere('dial_code', 'like', '%'.$q.'%')
+                ->orWhere('iso_code', 'like', '%'.$q.'%');
+        });
+    }
+
+    $countries = $query->limit(25)->get();
+
+    return response()->json([
+        'results' => $countries->map(function ($c) {
+            $flag = \App\Support\CountryDial::flagEmoji($c->iso_code);
+            $dial = \App\Support\CountryDial::normalize($c->dial_code);
+
+            return [
+                'id' => $c->id,
+                'text' => trim(($flag ? $flag.' ' : '').$c->name.' ('.$dial.')'),
+                'dial_code' => $dial,
+            ];
+        }),
+    ]);
 }
 
        public function share_member_add($member_id){
         $user=User::where('unique_id',$member_id)->first();
         $data['sponsor']=$user;
+        $data['countries'] = Country::active()->orderBy('name')->limit(25)->get();
+        $data['whatsapp_settings'] = \App\Models\WhatsappSetting::current();
+        $data['app_base'] = rtrim(request()->getBasePath(), '/');
 return view('page_templates.register',$data);
     }
     
@@ -85,7 +126,9 @@ $validator = Validator::make(
     $request->all(),
     [
         'email'   => 'required|email|unique:users',
-        'phone'   => 'required',
+        'phone'   => 'required|unique:users|regex:/^[0-9]{6,15}$/',
+        'country_id' => 'required|exists:countries,id',
+        'registration_verification_token' => 'required|string',
         'userpwd' => 'required|min:6|same:cpws', // or min:8 if you want
         'cpws'    => 'required|min:6',
     ],
@@ -98,9 +141,14 @@ $validator = Validator::make(
                         ->withErrors($validator)
                         ->withInput();
         }else{
+       $country = Country::findOrFail($request->country_id);
+       $otpService = app(OtpService::class);
+       $phoneE164 = $otpService->buildE164($country, $request->phone);
 
-
-
+       if (! session('registration_otp_verified') || ! $otpService->assertRegistrationToken($phoneE164, $request->registration_verification_token)) {
+           Session::flash('danger', 'Please verify your mobile number with OTP before registering.');
+           return redirect('register')->withInput();
+       }
 
        $uid=$this->unique_id();
        $seq_pin=$this->sequrity_id();
@@ -110,18 +158,15 @@ $validator = Validator::make(
       
       $data = array(
         'unique_id'=>$uid,
-
+        'registration_serial' => RegistrationSerialAllocator::next(),
         'seq_pin'=>$seq_pin,
-
         'name' => strip_tags($request->name),
-
         'email' => strip_tags($request->email),
-
         'adhar_no' => strip_tags($request->adhar_no),
-        
-        'phone' => strip_tags($request->phone),
-
-        'country' => strip_tags($request->country),
+        'phone' => preg_replace('/\D+/', '', $request->phone),
+        'dial_code' => \App\Support\CountryDial::normalize($country->dial_code),
+        'country_id' => $country->id,
+        'country' => $country->name,
         'password' => Hash::make($request->cpws),
         'secpwd'=>$request->cpws,
        
@@ -164,9 +209,8 @@ $validator = Validator::make(
              UserParent::create($data2);
              
              Auth::loginUsingId($result2->id);
-             
-            // $active=app('App\Http\Controllers\ProfileController')->active_pin_after_registration($uid);
-             
+             $this->sendWelcomeWhatsapp($result2, $phoneE164);
+             session()->forget(['registration_otp_verified', 'registration_phone_e164', 'registration_verification_token', 'registration_country_id']);
             
           Session::flash('registersuccess', 'Your have registred successfully');
            // return redirect()->route('userlogin'); 
@@ -179,21 +223,17 @@ $validator = Validator::make(
         }
       }elseif($request->sponsor_id==0 && User::count()==0){
 
-
        $data = array(
         'unique_id'=>$uid,
-
+        'registration_serial' => RegistrationSerialAllocator::next(),
          'seq_pin'=>$seq_pin,
-
         'name' => strip_tags($request->name),
-
         'email' => strip_tags($request->email),
-
           'adhar_no' => strip_tags($request->adhar_no),
-        
-        'phone' => strip_tags($request->phone),
-
-        'country' => strip_tags($request->country),
+        'phone' => preg_replace('/\D+/', '', $request->phone),
+        'dial_code' => \App\Support\CountryDial::normalize($country->dial_code),
+        'country_id' => $country->id,
+        'country' => $country->name,
         'password' => Hash::make($request->cpws),
         'secpwd'=>$request->cpws,
        
@@ -360,7 +400,8 @@ public function get_sopnsor_name(Request $request){
   }else{
     $data['err']=true;
   }
-  echo json_encode($data);
+  
+  return response()->json($data);
 }
  
 
@@ -630,6 +671,10 @@ return true;
     
     
      public function get_autopull_income_auto(){
+        if (! IncomeEngine::enabled()) {
+            echo 'Income engine is disabled.';
+            return;
+        }
      
 
  \Log::info("Autopull income Started");
@@ -818,6 +863,10 @@ echo 'success';
 
 
 public function generate_daily_income(){
+    if (! IncomeEngine::enabled()) {
+        echo 'Income engine is disabled.';
+        return;
+    }
     
      $all_user=User::where([['status','active']])->get();
    
@@ -886,7 +935,9 @@ echo "Updated Successfully";
 
 
 public function get_parent_user_byads($user_id,$level_id,$amount){
-   
+  if (! IncomeEngine::enabled()) {
+      return true;
+  }
 
   if($level_id<=11){
   $get_parent = UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['user_parents.user_id',$user_id]])->orderBy('active_date', 'ASC')->first();
@@ -938,6 +989,26 @@ $this->get_parent_user_byads($parent_id,$level_id+1,$amount);
 return true;
 
  }
+
+    protected function sendWelcomeWhatsapp($user, string $phoneE164): void
+    {
+        try {
+            $ws = WhatsappSetting::current();
+            if (! $ws->welcome_enabled || empty($ws->welcome_template_name)) {
+                return;
+            }
+
+            MetaCloudClient::fromSettings()->sendTemplate(
+                $phoneE164,
+                $ws->welcome_template_name,
+                $ws->welcome_template_language ?? 'en',
+                WelcomeTemplateParams::positionValuesForUser($user),
+                'welcome'
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Welcome WhatsApp skipped: '.$e->getMessage());
+        }
+    }
     
      
 

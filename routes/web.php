@@ -16,6 +16,9 @@ use App\Http\Controllers\User\Auth\LoginController as UserLoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\ErrorHandlerController;
 use App\Http\Controllers\RazorpayController;
+use App\Http\Controllers\Admin\WhatsappSettingsController;
+use App\Http\Controllers\Auth\RegistrationOtpController;
+use App\Http\Controllers\Auth\AddressOtpController;
 
 
 
@@ -44,6 +47,10 @@ Route::prefix('admin')
              Route::get('/dashboard', [AdminController::class, 'index'])->name('dashboard');
 
             Route::match(['get','patch'], '/settings', [SettingController::class, 'update'])->name('site.setting');
+            Route::get('/whatsapp-settings', [WhatsappSettingsController::class, 'edit'])->name('whatsapp.settings');
+            Route::patch('/whatsapp-settings', [WhatsappSettingsController::class, 'update'])->name('whatsapp.settings.update');
+            Route::post('/whatsapp-settings/test-connection', [WhatsappSettingsController::class, 'testConnection'])->name('whatsapp.test_connection');
+            Route::get('/whatsapp-logs', [WhatsappSettingsController::class, 'logs'])->name('whatsapp.logs');
             Route::match(['get','patch'], '/profile', [AdminController::class, 'profile'])->name('profile');
             Route::match(['get','patch'], '/change_password', [AdminController::class, 'change_password'])->name('change_password');
 
@@ -151,6 +158,8 @@ Route::middleware(['prevent-back-history'])->group(function () {
         ->name('active_pin_from_wallet_view');
     Route::post('active-pin-from-wallet', [ProfileController::class, 'active_pin_from_wallet'])
         ->name('active_pin_from_wallet');
+    Route::post('login-modal/dismiss', [ProfileController::class, 'dismissLoginModal'])
+        ->name('user.login_modal.dismiss');
 
     Route::get('secondary-wallet-transaction-history', [ProfileController::class, 'secondary_wallet_transaction_history'])
         ->name('secondary_wallet_transaction_history');
@@ -168,6 +177,9 @@ Route::middleware(['prevent-back-history'])->group(function () {
     Route::post('contact-form', [PageController::class, 'contact_form'])->name('contact-form');
 
     Route::get('register', [PageController::class, 'show_register_form'])->name('register');
+    Route::get('countries/search', [PageController::class, 'search_countries'])->name('countries.search');
+    Route::post('register/send-otp', [RegistrationOtpController::class, 'sendOtp'])->name('register.send_otp');
+    Route::post('register/verify-otp', [RegistrationOtpController::class, 'verifyOtp'])->name('register.verify_otp');
     Route::post('register-form', [PageController::class, 'register_form'])->name('register-form');
 
     Route::get('create-dummy-user', [PageController::class, 'create_dummy_user'])->name('create_dummy_user');
@@ -215,6 +227,8 @@ Route::middleware(['prevent-back-history'])->group(function () {
     Route::get('upload-kyc', [ProfileController::class, 'upload_kyc_view'])->name('upload_kyc_view');
     Route::get('upload-profile', [ProfileController::class, 'upload_profile_view'])->name('upload_profile_view');
     Route::post('update-kyc', [ProfileController::class, 'update_kyc'])->name('update-kyc');
+    Route::post('address/send-otp', [AddressOtpController::class, 'sendOtp'])->name('address.send_otp');
+    Route::post('address/verify-otp', [AddressOtpController::class, 'verifyOtp'])->name('address.verify_otp');
     Route::post('update-profile', [ProfileController::class, 'update_profile'])->name('update-profile');
 
     Route::get('withdraw-request', [ProfileController::class, 'withdraw_request_view'])

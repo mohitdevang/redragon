@@ -114,6 +114,56 @@
             </div>
         @endforeach
 
+        @if(isset($setting->income_engine_enabled) || \Illuminate\Support\Facades\Schema::hasColumn('settings', 'income_engine_enabled'))
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="control-label">Income Engine</label>
+                <input type="hidden" name="income_engine_enabled" value="0">
+                <select name="income_engine_enabled" class="form-control">
+                    <option value="0" {{ empty($setting->income_engine_enabled) ? 'selected' : '' }}>Disabled</option>
+                    <option value="1" {{ !empty($setting->income_engine_enabled) ? 'selected' : '' }}>Enabled</option>
+                </select>
+                <p class="help-block">When disabled, no direct, level, pool, community or reward income is generated.</p>
+            </div>
+        </div>
+        @endif
+
+        @if(isset($setting->package_purchase_engine_enabled) || \Illuminate\Support\Facades\Schema::hasColumn('settings', 'package_purchase_engine_enabled'))
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="control-label">Package Purchase / Activation Engine</label>
+                <input type="hidden" name="package_purchase_engine_enabled" value="0">
+                <select name="package_purchase_engine_enabled" class="form-control">
+                    <option value="0" {{ empty($setting->package_purchase_engine_enabled) ? 'selected' : '' }}>Disabled</option>
+                    <option value="1" {{ !empty($setting->package_purchase_engine_enabled) ? 'selected' : '' }}>Enabled</option>
+                </select>
+                <p class="help-block">When disabled, users cannot activate packages from wallet (submit hidden).</p>
+            </div>
+        </div>
+        @endif
+
+        @if(\Illuminate\Support\Facades\Schema::hasColumn('settings', 'login_modal_enabled'))
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="control-label">User login popup image</label>
+                <input type="hidden" name="login_modal_enabled" value="0">
+                <select name="login_modal_enabled" class="form-control">
+                    <option value="0" {{ empty($setting->login_modal_enabled) ? 'selected' : '' }}>Disabled</option>
+                    <option value="1" {{ !empty($setting->login_modal_enabled) ? 'selected' : '' }}>Enabled</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label class="control-label">Login popup image</label>
+                <input type="file" name="login_modal_image" class="form-control" accept="image/*">
+                @if(!empty($setting->login_modal_image))
+                    <p class="help-block">Current: <a href="{{ url('/') }}/public/uploads/{{ $setting->login_modal_image }}" target="_blank">View</a></p>
+                @endif
+            </div>
+        </div>
+        @endif
+
         {{-- Withdraw Date --}}
         <div class="col-md-6">
             <div class="form-group {{ $errors->has('date_withdrawl') ? 'has-error' : '' }}">

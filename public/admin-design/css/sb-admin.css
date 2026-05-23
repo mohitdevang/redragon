@@ -4,6 +4,15 @@
  * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap/blob/gh-pages/LICENSE)
  */
 
+/* Red Dragon admin theme (aligned with user panel) */
+:root {
+    --rd-primary: #D81518;
+    --rd-primary-dark: #a81012;
+    --rd-primary-light: #ff3b3e;
+    --rd-gradient: linear-gradient(90deg, #D81518 0%, #a81012 100%);
+    --rd-gradient-hover: linear-gradient(135deg, #ff3b3e 0%, #D81518 50%, #a81012 100%);
+}
+
 /* Global Styles */
 
 body {
@@ -34,12 +43,12 @@ input[type="radio"] {
 a:focus {
     outline: none;
     text-shadow: rgba(0, 0, 0, .25) 0 -1px 0 !important;
-    background: linear-gradient(90deg, #E4B13B 0%, #7E6221 100%) !important;
+    background: var(--rd-gradient) !important;
     box-shadow: rgba(0, 0, 0, .25) 0 1px 0, inset rgba(255, 255, 255, .16) 0 1px 0 !important;
 } */
 
 .side-nav li a:hover {
-    border-right: 3px solid #7E6221;
+    border-right: 3px solid var(--rd-primary-dark);
 }
 
 .m-b-10 {
@@ -319,11 +328,11 @@ ul.alert-dropdown {
 }
 
 .navbar-inverse .navbar-nav>.active>a {
-    background: linear-gradient(90deg, #E4B13B 0%, #7E6221 100%) !important;
+    background: var(--rd-gradient) !important;
 }
 
 .side-nav>.current-page>a {
-    background: linear-gradient(90deg, #E4B13B 0%, #7E6221 100%) !important;
+    background: var(--rd-gradient) !important;
 }
 
 .current-page {
@@ -457,22 +466,23 @@ img-circle {
 
 /*.panel-body{scroll-behavior: smooth;touch-action: pan-down !important;}*/
 .panel-green {
-    border-color: #008b51 !important;
-    border-style: dotted;
+    border-color: var(--rd-primary-dark) !important;
+    border-style: solid;
 }
 
 .panel-green>.panel-heading {
-    border-color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
     color: #fff;
-    background: linear-gradient(90deg, #E4B13B 0%, #7E6221 100%) !important;
+    background: var(--rd-gradient) !important;
+    box-shadow: 0 4px 16px rgba(216, 21, 24, 0.35);
 }
 
 .panel-green>a {
-    color: #5cb85c;
+    color: var(--rd-primary-light);
 }
 
 .panel-green>a:hover {
-    color: #3d8b3d;
+    color: #fff;
 }
 
 .panel-red {
@@ -494,21 +504,21 @@ img-circle {
 }
 
 .panel-yellow {
-    border-color: #f0ad4e;
+    border-color: var(--rd-primary);
 }
 
 .panel-yellow>.panel-heading {
-    border-color: #f0ad4e;
+    border-color: var(--rd-primary-dark);
     color: #fff;
-    background-color: #f0ad4e;
+    background: var(--rd-gradient);
 }
 
 .panel-yellow>a {
-    color: #f0ad4e;
+    color: var(--rd-primary-light);
 }
 
 .panel-yellow>a:hover {
-    color: #df8a13;
+    color: #fff;
 }
 
 #interchange li {
@@ -538,7 +548,7 @@ img-circle {
 
 .panel-default>.panel-heading {
     color: #fff;
-    background-color: #1BBB9C;
+    background: var(--rd-gradient);
     margin-left: -1px;
     margin-right: -1px;
 }
@@ -734,17 +744,17 @@ label.control-label {
 
 /***** table ********/
 .pagination>.active>a {
-    background-color: #1BBB9C;
-    border-color: #1BBB9C;
+    background-color: var(--rd-primary);
+    border-color: var(--rd-primary-dark);
 }
 
 .pagination>.active>a:hover {
-    background-color: #55ce63;
-    border-color: #55ce63;
+    background-color: var(--rd-primary-dark);
+    border-color: var(--rd-primary-dark);
 }
 
 .pagination>li>a:hover {
-    background-color: #55ce63;
+    background-color: var(--rd-primary-light);
     border-color: #55ce63;
     color: #fff;
 }

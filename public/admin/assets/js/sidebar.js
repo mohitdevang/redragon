@@ -61,8 +61,19 @@
 
     function initCounters() {
         document.querySelectorAll('.stat-value').forEach(counter => {
-            const text = counter.textContent;
-            const value = parseInt(text.replace(/\D/g, ''));
+            if (counter.classList.contains('stat-value-text') || counter.dataset.noAnimate === '1') {
+                return;
+            }
+
+            const text = (counter.textContent || '').trim();
+            if (!text || /[a-zA-Z]/.test(text)) {
+                return;
+            }
+
+            const value = parseInt(text.replace(/\D/g, ''), 10);
+            if (Number.isNaN(value)) {
+                return;
+            }
 
             if (text.includes('$')) counter.dataset.prefix = '$';
             if (text.includes('%')) counter.dataset.suffix = '%';

@@ -25,7 +25,13 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>My Account Status</h3>
-                <div class="stat-value status-green">Active</div>
+                @php
+                    $accountStatus = strtolower((string) ($status->status ?? 'inactive'));
+                    $isActiveAccount = $accountStatus === 'active';
+                @endphp
+                <div class="stat-value stat-value-text {{ $isActiveAccount ? 'status-green' : 'status-inactive' }}" data-no-animate="1">
+                    {{ $isActiveAccount ? 'Active' : ucfirst($accountStatus ?: 'Inactive') }}
+                </div>
             </div>
             <div class="stat-icon success">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
@@ -41,7 +47,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Direct Partner</h3>
-                <div class="stat-value">3</div>
+                <div class="stat-value">{{ $direct_partner_count ?? 0 }}</div>
             </div>
             <div class="stat-icon magenta">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
@@ -59,7 +65,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Active Direct Partner</h3>
-                <div class="stat-value">62</div>
+                <div class="stat-value">{{ $active_direct_user ?? 0 }}</div>
             </div>
             <div class="stat-icon purple">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
@@ -76,8 +82,8 @@
     <div class="glass-card glass-card-3d stat-card">
         <div class="stat-card-inner">
             <div class="stat-info">
-                <h3>Team Partner</h3>
-                <div class="stat-value">51</div>
+                <h3>Total Team Partner</h3>
+                <div class="stat-value">{{ $total_team_partner ?? 0 }}</div>
             </div>
             <div class="stat-icon cyan">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2">
@@ -95,7 +101,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Active Team Partner</h3>
-                <div class="stat-value">51</div>
+                <div class="stat-value">{{ $active_team_partner ?? 0 }}</div>
             </div>
             <div class="stat-icon cyan">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2">
@@ -192,10 +198,10 @@
                         <p class="mb-0">Package bought today</p>
                     </div>
                 </div>
-                <div class="item-amount">+$1,000</div>
+                <div class="item-amount">+$0</div>
             </div>
 
-            <div class="activity-item">
+            <div class="activity-item d-none">
                 <div class="item-left">
                     <div class="item-icon">💰</div>
                     <div class="item-info d-flex flex-column gap-1">
@@ -203,51 +209,51 @@
                         <p class="mb-0">Total invested today</p>
                     </div>
                 </div>
-                <div class="item-amount">+$48.60</div>
+                <div class="item-amount">+$0</div>
             </div>
 
             <div class="activity-item">
                 <div class="item-left">
                     <div class="item-icon">📊</div>
                     <div class="item-info d-flex flex-column gap-1">
-                        <h3 class="mb-0">Today ROI Income</h3>
+                        <h3 class="mb-0">Today Direct Income</h3>
                         <p class="mb-0">Return on investment</p>
                     </div>
                 </div>
-                <div class="item-amount">+$98.60</div>
+                <div class="item-amount">+$0</div>
             </div>
 
             <div class="activity-item">
                 <div class="item-left">
                     <div class="item-icon">📈</div>
                     <div class="item-info d-flex flex-column gap-1">
-                        <h3 class="mb-0">Today Level Income</h3>
+                        <h3 class="mb-0">Today Level Partner Bonus</h3>
                         <p class="mb-0">Level bonus earned</p>
                     </div>
                 </div>
-                <div class="item-amount">+$48.60</div>
+                <div class="item-amount">+$0</div>
             </div>
 
             <div class="activity-item">
                 <div class="item-left">
                     <div class="item-icon">🏆</div>
                     <div class="item-info d-flex flex-column gap-1">
-                        <h3 class="mb-0">Today Reward</h3>
-                        <p class="mb-0">Reward earned today</p>
+                        <h3 class="mb-0">Today Magic Pool Bonus</h3>
+                        <p class="mb-0">Pool bonus earned today</p>
                     </div>
                 </div>
-                <div class="item-amount">+$48.60</div>
+                <div class="item-amount">+$0</div>
             </div>
 
             <div class="activity-item">
                 <div class="item-left">
                     <div class="item-icon">👥</div>
                     <div class="item-info d-flex flex-column gap-1">
-                        <h3 class="mb-0">Today Team Club Bonus</h3>
-                        <p class="mb-0">Team bonus earned</p>
+                        <h3 class="mb-0">Today GLOBAL COMMUNITY BONUS</h3>
+                        <p class="mb-0">Community bonus earned</p>
                     </div>
                 </div>
-                <div class="item-amount">+$42.60</div>
+                <div class="item-amount">+$0</div>
             </div>
         </div>
 
@@ -300,7 +306,7 @@
     <div class="glass-card glass-card-3d stat-card">
         <div class="stat-card-inner">
             <div class="stat-info">
-                <h3>Direct Partner Bonus</h3>
+                <h3>Total Direct Partner Bonus</h3>
                 <div class="stat-value">$0</div>
             </div>
             <div class="stat-icon cyan">
@@ -318,7 +324,7 @@
     <div class="glass-card glass-card-3d stat-card">
         <div class="stat-card-inner">
             <div class="stat-info">
-                <h3>Level Partner Bonus</h3>
+                <h3>Total Level Partner Bonus</h3>
                 <div class="stat-value">$0</div>
             </div>
             <div class="stat-icon magenta">
@@ -334,7 +340,7 @@
     <div class="glass-card glass-card-3d stat-card">
         <div class="stat-card-inner">
             <div class="stat-info">
-                <h3>Global Magic Bonus</h3>
+                <h3>Total Magic Pool Bonus</h3>
                 <div class="stat-value">$0</div>
             </div>
             <div class="stat-icon purple">
@@ -350,7 +356,7 @@
     <div class="glass-card glass-card-3d stat-card">
         <div class="stat-card-inner">
             <div class="stat-info">
-                <h3>Global Community Bonus</h3>
+                <h3>Total GLOBAL COMMUNITY BONUS</h3>
                 <div class="stat-value">$0</div>
             </div>
             <div class="stat-icon success">
@@ -424,7 +430,24 @@
     <div class="glass-card glass-card-3d stat-card">
         <div class="stat-card-inner">
             <div class="stat-info">
-                <h3>Top Up Wallet</h3>
+                <h3>Total Top Up Wallet</h3>
+                <div class="stat-value">$0</div>
+            </div>
+            <div class="stat-icon success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
+                    <path d="M12 19V5" />
+                    <path d="M19 12l-7-7-7 7" />
+                    <circle cx="12" cy="16" r="1" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Community Wallet -->
+    <div class="glass-card glass-card-3d stat-card">
+        <div class="stat-card-inner">
+            <div class="stat-info">
+                <h3>Total Community Wallet</h3>
                 <div class="stat-value">$0</div>
             </div>
             <div class="stat-icon success">
@@ -442,109 +465,110 @@
 
 
 <!-- Withdrawal Stats -->
-<h3 class="section-heading">Top Earner</h3>
-<!-- Tab Navigation -->
-<div class="tab-navigation">
-    <button class="tab-btn active" onclick="switchTab('earner')">Top Earner</button>
-    <button class="tab-btn" onclick="switchTab('loser')">Top Loser</button>
-</div>
+<div class="d-none">
+    <h3 class="section-heading">Top Earner</h3>
+    <!-- Tab Navigation -->
+    <div class="tab-navigation d-none">
+        <button class="tab-btn active" onclick="switchTab('earner')">Top Earner</button>
+        <button class="tab-btn" onclick="switchTab('loser')">Top Loser</button>
+    </div>
 
-<!-- Top Earner Tab -->
-<div id="earner-tab" class="tab-content">
-    <div class="glass-card glass-card-3d w-100 p-4">
-        <div class="d-flex flex-column gap-2">
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#1 John Doe <small class="grayColor">USR001</small></span>
-                <span class="text-success">$15,000</span>
+    <!-- Top Earner Tab -->
+    <div id="earner-tab" class="tab-content">
+        <div class="glass-card glass-card-3d w-100 p-4">
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#1 John Doe <small class="grayColor">USR001</small></span>
+                    <span class="text-success">$15,000</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#2 Jane Smith <small class="grayColor">USR002</small></span>
+                    <span class="text-success">$12,500</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#3 Mike Johnson <small class="grayColor">USR003</small></span>
+                    <span class="text-success">$10,200</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#4 Sarah Williams <small class="grayColor">USR004</small></span>
+                    <span class="text-success">$9,800</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#5 David Brown <small class="grayColor">USR005</small></span>
+                    <span class="text-success">$8,500</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#6 Emily Davis <small class="grayColor">USR006</small></span>
+                    <span class="text-success">$7,200</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#7 Chris Wilson <small class="grayColor">USR007</small></span>
+                    <span class="text-success">$6,800</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#8 Lisa Anderson <small class="grayColor">USR008</small></span>
+                    <span class="text-success">$5,500</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#9 Robert Taylor <small class="grayColor">USR009</small></span>
+                    <span class="text-success">$4,200</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="text-white">#10 Amanda Martinez <small class="grayColor">USR010</small></span>
+                    <span class="text-success">$3,800</span>
+                </div>
             </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#2 Jane Smith <small class="grayColor">USR002</small></span>
-                <span class="text-success">$12,500</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#3 Mike Johnson <small class="grayColor">USR003</small></span>
-                <span class="text-success">$10,200</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#4 Sarah Williams <small class="grayColor">USR004</small></span>
-                <span class="text-success">$9,800</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#5 David Brown <small class="grayColor">USR005</small></span>
-                <span class="text-success">$8,500</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#6 Emily Davis <small class="grayColor">USR006</small></span>
-                <span class="text-success">$7,200</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#7 Chris Wilson <small class="grayColor">USR007</small></span>
-                <span class="text-success">$6,800</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#8 Lisa Anderson <small class="grayColor">USR008</small></span>
-                <span class="text-success">$5,500</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#9 Robert Taylor <small class="grayColor">USR009</small></span>
-                <span class="text-success">$4,200</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2">
-                <span class="text-white">#10 Amanda Martinez <small class="grayColor">USR010</small></span>
-                <span class="text-success">$3,800</span>
+        </div>
+    </div>
+
+    <!-- Top Loser Tab -->
+    <div id="loser-tab" class="tab-content">
+        <div class="glass-card glass-card-3d w-100 p-4">
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#1 Mark Thompson <small class="grayColor">USR011</small></span>
+                    <span class="text-danger">-$8,500</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#2 Jessica Lee <small class="grayColor">USR012</small></span>
+                    <span class="text-danger">-$7,200</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#3 Kevin White <small class="grayColor">USR013</small></span>
+                    <span class="text-danger">-$6,800</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#4 Rachel Green <small class="grayColor">USR014</small></span>
+                    <span class="text-danger">-$5,500</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#5 Tom Harris <small class="grayColor">USR015</small></span>
+                    <span class="text-danger">-$4,900</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#6 Nicole Clark <small class="grayColor">USR016</small></span>
+                    <span class="text-danger">-$4,200</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#7 Brian Lewis <small class="grayColor">USR017</small></span>
+                    <span class="text-danger">-$3,800</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#8 Michelle Walker <small class="grayColor">USR018</small></span>
+                    <span class="text-danger">-$3,200</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-white">#9 Daniel Hall <small class="grayColor">USR019</small></span>
+                    <span class="text-danger">-$2,500</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="text-white">#10 Laura Allen <small class="grayColor">USR020</small></span>
+                    <span class="text-danger">-$1,800</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- Top Loser Tab -->
-<div id="loser-tab" class="tab-content">
-    <div class="glass-card glass-card-3d w-100 p-4">
-        <div class="d-flex flex-column gap-2">
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#1 Mark Thompson <small class="grayColor">USR011</small></span>
-                <span class="text-danger">-$8,500</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#2 Jessica Lee <small class="grayColor">USR012</small></span>
-                <span class="text-danger">-$7,200</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#3 Kevin White <small class="grayColor">USR013</small></span>
-                <span class="text-danger">-$6,800</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#4 Rachel Green <small class="grayColor">USR014</small></span>
-                <span class="text-danger">-$5,500</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#5 Tom Harris <small class="grayColor">USR015</small></span>
-                <span class="text-danger">-$4,900</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#6 Nicole Clark <small class="grayColor">USR016</small></span>
-                <span class="text-danger">-$4,200</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#7 Brian Lewis <small class="grayColor">USR017</small></span>
-                <span class="text-danger">-$3,800</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#8 Michelle Walker <small class="grayColor">USR018</small></span>
-                <span class="text-danger">-$3,200</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                <span class="text-white">#9 Daniel Hall <small class="grayColor">USR019</small></span>
-                <span class="text-danger">-$2,500</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center py-2">
-                <span class="text-white">#10 Laura Allen <small class="grayColor">USR020</small></span>
-                <span class="text-danger">-$1,800</span>
-            </div>
-        </div>
-    </div>
-</div>
-
 
 @endsection
 

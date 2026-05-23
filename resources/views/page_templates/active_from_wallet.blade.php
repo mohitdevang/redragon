@@ -22,6 +22,11 @@
         <div class="card-title-border">
             <h2 class="card-title">Id activation from wallet</h2>
         </div>
+        @if(empty($package_purchase_enabled))
+        <div class="alert alert-warning">
+            Package activation / plan purchase is <strong>disabled</strong> by admin. Please contact support.
+        </div>
+        @else
         <form class="d-flex flex-column gap-4" id="active-pin-form" action="{{ route('active_pin_from_wallet') }}"
             method="post">
             {{ csrf_field() }}
@@ -70,6 +75,8 @@
             </div>
 
             <button type="submit" class="submit-button w-25  mt-2">Submit</button>
+        </form>
+        @endif
 
     </div>
     {{-- @endif --}}

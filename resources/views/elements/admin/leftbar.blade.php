@@ -71,7 +71,7 @@ Withdraw<i class="fa fa-fw fa-caret-down"></i></a>
                       
                     </li>
 
-                    <li>
+                    <li class="hidden">
                         <a href="javascript:;" data-toggle="collapse" data-target="#collapse3"><i class="fa fa-thumb-tack" aria-hidden="true"></i> Pin Generation <i class="fa fa-fw fa-caret-down"></i></a>
                         <ul id="collapse3" class="collapse left-design">
                             <li>
@@ -86,7 +86,7 @@ Withdraw<i class="fa fa-fw fa-caret-down"></i></a>
                     </li>
 
 
-                    <li>
+                    <li class="hidden">
                         <a href="javascript:;" data-toggle="collapse" data-target="#collapseads"><i class="fa fa-thumb-tack" aria-hidden="true"></i> Ads Management <i class="fa fa-fw fa-caret-down"></i></a>
                         <ul id="collapseads" class="collapse left-design">
                             <li>
@@ -132,7 +132,7 @@ Withdraw<i class="fa fa-fw fa-caret-down"></i></a>
 
 
 
-                    <li>
+                    <li class="hidden">
                         <a href="javascript:;" data-toggle="collapse" data-target="#commreport"><i class="fa fa-bars" aria-hidden="true"></i>
                      Commission Report <i class="fa fa-fw fa-caret-down"></i></a>
                         <ul id="commreport" class="collapse left-design">
@@ -157,7 +157,7 @@ Withdraw<i class="fa fa-fw fa-caret-down"></i></a>
                     </li>
  -->
 
-                      <li>
+                      <li class="hidden">
                         <a href="{{ route('admin.bank_details') }}" ><i class="fa fa-bars" aria-hidden="true"></i>
                      Bank Details </a>
                  
@@ -168,6 +168,14 @@ Withdraw<i class="fa fa-fw fa-caret-down"></i></a>
                          <li>
                             <a href="{{ route('admin.site.setting') }}"><i class="fa fa-cogs" aria-hidden="true"></i>
 General Settings</a>
+                            </li>
+                            <li>
+                            <a href="{{ route('admin.whatsapp.settings') }}"><i class="fa fa-comments" aria-hidden="true"></i>
+WhatsApp Settings</a>
+                            </li>
+                            <li class="hidden">
+                            <a href="{{ route('admin.whatsapp.logs') }}"><i class="fa fa-list" aria-hidden="true"></i>
+WhatsApp Logs</a>
                             </li>
 
                 </ul>

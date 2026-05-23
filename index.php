@@ -3,6 +3,12 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
+/*
+ * Laragon/Windows: suppress display_errors so PHP warnings (e.g. proc_open/git)
+ * do not prepend HTML to JSON API responses.
+ */
+ini_set('display_errors', '0');
+
 define('LARAVEL_START', microtime(true));
 
 // Determine if the application is in maintenance mode...
