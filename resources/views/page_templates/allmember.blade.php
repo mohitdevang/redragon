@@ -25,11 +25,10 @@
                     <tbody>
                         @if(isset($all_user))
                         @php($s = 1)
-                        @php($level = 1)
                         @foreach($all_user as $du)
                         <tr>
                             <td>{{ $s }}</td>
-                            <td>Level-{{ $level }}</td>
+                            <td>Level-{{ $du->downline_level ?? 1 }}</td>
                             <td>{{ $du->name }}</td>
                             <td>{{ $du->unique_id }}</td>
                             <td>{{ date('d-m-Y h:i a', strtotime($du->created_at)) }}</td>

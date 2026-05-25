@@ -428,14 +428,10 @@ $html=' <div class="row">
     }
 
      public function all_member(){
-     
-        $id=Auth::guard()->user()->unique_id;
-        $user=UserParent::where('user_id',$id)->first();
-         $data['all_user']=UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where('user_parents.id','>',$user->id)->get();
+        $id = Auth::guard()->user()->unique_id;
+        $data['all_user'] = \App\Services\LevelPartnerMembers::downlineWithLevels($id);
 
-
-
-         return view('page_templates.allmember',$data); 
+        return view('page_templates.allmember', $data);
     }
 
        public function community_member(){

@@ -3,7 +3,7 @@
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">
-                <img src=" {{url('/')}}/public/landing/assets/images/svg/logo.svg" alt="CrowdFund Logo" class="logo">
+                <img src=" {{url('/')}}/public/landing/assets/images/svg/logo.svg" alt="Redragon Logo" class="logo">
             </div>
           
             <ul class="nav-menu" id="navMenu">

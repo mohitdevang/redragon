@@ -29,7 +29,7 @@
 
                     <p class="hero-description-premium">
                         Connect with thousands of backers ready to support innovative ideas. From creative projects to
-                        tech startups, bring your vision to life with CrowdFund.
+                        tech startups, bring your vision to life with Redragon.
                     </p>
 
                     <div class="hero-stats-premium">
@@ -139,7 +139,7 @@
         <div class="container">
             <div class="section-header">
                 <span class="tag">About Us</span>
-                <h2>About <span class="highlight">CrowdFund</span></h2>
+                <h2>About <span class="highlight">Redragon</span></h2>
                 <p class="section-subtitle">Empowering creators and backers to bring ideas to life through the power of
                     community</p>
             </div>
@@ -147,7 +147,7 @@
             <div class="about-content">
                 <div class="about-left">
                     <h3>Our Mission</h3>
-                    <p>CrowdFund is dedicated to democratizing creative and innovative projects. We connect visionary
+                    <p>Redragon is dedicated to democratizing creative and innovative projects. We connect visionary
                         creators with passionate backers, turning ideas into reality and making dreams achievable.</p>
                     <p>With over $2.1B raised across 8.5K+ campaigns and 100K+ active backers, we've become the trusted
                         platform for bringing ideas to life.</p>
@@ -178,7 +178,7 @@
                 </div>
 
                 <div class="about-right">
-                    <h3>Why Choose CrowdFund?</h3>
+                    <h3>Why Choose Redragon?</h3>
                     <div class="features-list">
                         <div class="feature-item">
                             <div class="feature-icon">🔒</div>
@@ -356,8 +356,8 @@
         <div class="container">
             <div class="section-header">
                 <span class="tag">Why Us</span>
-                <h2>Why Choose <span class="highlight">CrowdFund</span></h2>
-                <p class="section-subtitle">The most trusted crowdfunding platform for creators and backers</p>
+                <h2>Why Choose <span class="highlight">Redragon</span></h2>
+                <p class="section-subtitle">The most trusted Redragoning platform for creators and backers</p>
             </div>
 
             <div class="features-grid">
@@ -449,9 +449,9 @@
                                 <div class="contact-icon-bg">📧</div>
                             </div>
                             <h3>Email Support</h3>
-                            <p class="contact-main">support@redragon.world/</p>
+                            <p class="contact-main">support@redragon.world</p>
                             <p class="contact-sub">Response within 1 hour</p>
-                            <a href="mailto:support@crowdfund.com" class="contact-link">Send Email →</a>
+                            <a href="mailto:support@redragon.world" class="contact-link">Send Email →</a>
                         </div>
                     </div>
 

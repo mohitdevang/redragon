@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrowdFund - Bring Your Ideas to Life</title>
+    <title>Redragon - Bring Your Ideas to Life</title>
         <link rel="icon" href="{!! asset('public/uploads/'.$setting->favicon) !!}" type="image/png">
     <!-- Font Css -->
     <link href="{{url('/')}}/public/landing/assets/css/stylesheet.css" rel="stylesheet">

@@ -9,7 +9,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="nav-brand">
-                        <img src=" {{url('/')}}/public/landing/assets/images/svg/logo.svg" alt="CrowdFund Logo" class="logo">
+                        <img src=" {{url('/')}}/public/landing/assets/images/svg/logo.svg" alt="Redragon Logo" class="logo">
                        
                     </div>
                     <p>Empowering creators and backers to bring ideas to life through the power of community.</p>
@@ -49,7 +49,7 @@
             <div class="footer-divider"></div>
 
             <div class="footer-bottom">
-                <p>&copy; 2024 CrowdFund. All rights reserved.</p>
+                <p>&copy; 2026 Redragon. All rights reserved.</p>
                 <div class="footer-badges">
                     <span class="badge">🔒 Secure</span>
                     <span class="badge">✓ Verified</span>
