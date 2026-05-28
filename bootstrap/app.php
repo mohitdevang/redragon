@@ -26,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule) {
-        $schedule->command('redragon:community-bonus')->dailyAt('01:00')->withoutOverlapping();
-        $schedule->command('app:income-cron')->dailyAt('01:10')->withoutOverlapping();
+        $schedule->command('redragon:community-bonus')->dailyAt('00:10')->withoutOverlapping();
+        $schedule->command('app:income-cron')->dailyAt('00:20')->withoutOverlapping();
     })
     ->create();
