@@ -1,6 +1,11 @@
 @extends('layouts.main')
 @section('title') Dashboard @endsection
 @section('content')
+<style>
+    #page-wrapper .huge {
+        font-size: 30px !important;
+    }
+</style>
 <div id="page-wrapper">
 
             <div class="container-fluid">
@@ -40,12 +45,12 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
 												<div class="huge">{{$totaluser}}</div>
-												<div>Total Member</div>
 											</div>
+											<div class="col-xs-12">Total Member</div>
 										</div>
 									</div>
 									
@@ -59,36 +64,72 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
 												<div class="huge">{{$active_direct_user}}</div>
-												<div>Active Member</div>
 											</div>
+											<div class="col-xs-12">Active Member</div>
 										</div>
 									</div>
 									
 								</div>
 								</div>
 							</li>
-							
-							
-							
 							<li>
 								<div class="panel_division">
 									<div class="panel panel-green">
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-exchange fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
-												<div class="huge">₹ {{$total_level_view}}</div>
-												<div>Total Level Income</div>
+												<div class="huge">$ {{ number_format($total_topup_wallet_usage ?? 0, 2, '.', '') }}</div>
 											</div>
+											<div class="col-xs-12" style="padding:0;">Total Top-Up Wallet Usage</div>
 										</div>
 									</div>
 									
+								</div>
+								</div>
+							</li>
+							
+							
+							
+					<li>
+								<div class="panel_division">
+									<div class="panel panel-green">
+									<div class="panel-heading">
+										<div class="row">
+											<div class="col-xs-3 col-md-3">
+												<i class="fa fa-tasks fa-4x"></i>
+											</div>
+											<div class="col-xs-9 scroll-none text-right">
+												<div class="huge">$ {{ number_format($total_direct_income, 2, '.', '') }}</div>
+											</div>
+											<div class="col-xs-12">Total Direct Income</div>
+										</div>
+									</div>
+									
+								</div>
+								</div>
+							</li>
+
+							<li>
+								<div class="panel_division">
+									<div class="panel panel-green">
+									<div class="panel-heading">
+										<div class="row">
+											<div class="col-xs-3 col-md-3">
+												<i class="fa fa-exclamation-triangle fa-4x"></i>
+											</div>
+											<div class="col-xs-9 scroll-none text-right">
+												<div class="huge">$ {{ number_format($total_lapse_income ?? 0, 2, '.', '') }}</div>
+											</div>
+											<div class="col-xs-12">Total Lapse Income</div>
+										</div>
+									</div>
 								</div>
 								</div>
 							</li>
@@ -127,12 +168,12 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
-												<div class="huge">₹ {{$total_self_view}}</div>
-												<div>Total Self Income</div>
+												<div class="huge">$ {{ number_format($total_level_view, 2, '.', '') }}</div>
 											</div>
+											<div class="col-xs-12">Total Level Income</div>
 										</div>
 									</div>
 									
@@ -147,12 +188,12 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
-												<div class="huge">₹ {{$total_onetime_view}}</div>
-												<div>Total Onetime Income</div>
+												<div class="huge">$ {{ number_format($total_magic_income, 2, '.', '') }}</div>
 											</div>
+											<div class="col-xs-12">Total Magic Income</div>
 										</div>
 									</div>
 									
@@ -167,12 +208,12 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
-												<div class="huge">₹ {{$total_reward}}</div>
-												<div>Total Reward</div>
+												<div class="huge">$ {{ number_format($total_community_income, 2, '.', '') }}</div>
 											</div>
+											<div class="col-xs-12">Total Community Income</div>
 										</div>
 									</div>
 									
@@ -187,12 +228,12 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
-												<div class="huge">₹ {{$total_credit}}</div>
-												<div>Total amount credited</div>
+												<div class="huge">{{ $pending_withdraw_requests ?? 0 }}</div>
 											</div>
+											<div class="col-xs-12">Total Withdraw Pending Requests</div>
 										</div>
 									</div>
 									
@@ -207,12 +248,12 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
-												<div class="huge">₹ {{$total_debit}}</div>
-												<div>Total amount debited</div>
+												<div class="huge">$ {{ number_format($total_withdraw_approved ?? 0, 2, '.', '') }}</div>
 											</div>
+											<div class="col-xs-12">Total Withdrawal</div>
 										</div>
 									</div>
 									
@@ -226,12 +267,66 @@
 									<div class="panel-heading">
 										<div class="row">
 											<div class="col-xs-3 col-md-3">
-												<i class="fa fa-tasks fa-5x"></i>
+												<i class="fa fa-tasks fa-4x"></i>
 											</div>
 											<div class="col-xs-9 scroll-none text-right">
-												<div class="huge">₹ {{$total_balance}}</div>
-												<div>Available Balance</div>
+												<div class="huge">{{ $total_buy_usdt_requests ?? 0 }}</div>
 											</div>
+											<div class="col-xs-12">Total Buy USDT Requests</div>
+										</div>
+									</div>
+									
+								</div>
+								</div>
+							</li>
+							<li>
+								<div class="panel_division">
+									<div class="panel panel-green">
+									<div class="panel-heading">
+										<div class="row">
+											<div class="col-xs-3 col-md-3">
+												<i class="fa fa-tasks fa-4x"></i>
+											</div>
+											<div class="col-xs-9 scroll-none text-right">
+												<div class="huge">{{ $pending_buy_usdt_requests ?? 0 }}</div>
+											</div>
+											<div class="col-xs-12">Total Pending Buy USDT Requests</div>
+										</div>
+									</div>
+									
+								</div>
+								</div>
+							</li>
+							<li>
+								<div class="panel_division">
+									<div class="panel panel-green">
+									<div class="panel-heading">
+										<div class="row">
+											<div class="col-xs-3 col-md-3">
+												<i class="fa fa-tasks fa-4x"></i>
+											</div>
+											<div class="col-xs-9 scroll-none text-right">
+												<div class="huge">{{ $approved_buy_usdt_requests ?? 0 }}</div>
+											</div>
+											<div class="col-xs-12">Total Approved Buy USDT Requests</div>
+										</div>
+									</div>
+									
+								</div>
+								</div>
+							</li>
+							<li>
+								<div class="panel_division">
+									<div class="panel panel-green">
+									<div class="panel-heading">
+										<div class="row">
+											<div class="col-xs-3 col-md-3">
+												<i class="fa fa-tasks fa-4x"></i>
+											</div>
+											<div class="col-xs-9 scroll-none text-right">
+												<div class="huge">$ {{ number_format($approved_buy_usdt_amount ?? 0, 2, '.', '') }}</div>
+											</div>
+											<div class="col-xs-12">Total Approved Buy USDT Amount</div>
 										</div>
 									</div>
 									

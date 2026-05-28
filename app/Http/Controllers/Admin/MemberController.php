@@ -25,12 +25,13 @@ use App\Models\RewardPlan;
 use App\Models\NotificationText;
 use App\Models\BankDetail;
 use App\Models\Video;
+use App\Services\Wallet\WalletService;
 
 class MemberController extends Controller
 {
-  
-    public function __construct()
-    {
+    public function __construct(
+        protected WalletService $wallets
+    ) {
        //$this->middleware('auth:admin');
     }
  
@@ -660,114 +661,63 @@ public function request_change_withrraw_status(Request $request){
      if ($request->ajax()) {
             $id = $request->id;
 
-            if($request->status=='approve'){
-                $commision=CommisionTable::where('id',$id)->first();
-                $user=User::where('unique_id',$commision->member_id)->first();
-                 
+            try {
+                $result2 = DB::transaction(function () use ($request, $id) {
+                    $commision = CommisionTable::where('id', $id)->lockForUpdate()->first();
+                    if (! $commision || $commision->request_status !== 'processing') {
+                        throw new \RuntimeException('Withdraw request not found or already processed.');
+                    }
 
+                    $amount = (float) $commision->amount;
+                    $wallet = $this->wallets->getBalance($commision->member_id, WalletService::PRIMARY);
 
-$beneficiary_account_no=$user->ac_number;
-$beneficiary_mobile_no=$user->phone;
-$beneficiary_ifsc=$user->ifsc;
-$beneficiary_name=$e_type = str_replace(' ', '%20', $user->ac_holder_name);
-$amount=round($commision->net_payment);
-$purpose='OTHERS';
+                    if ($request->status === 'approve') {
+                        if ($wallet['balance'] < $amount) {
+                            throw new \RuntimeException('Insufficient available balance.');
+                        }
+                        if ($wallet['hold_balance'] < $amount) {
+                            throw new \RuntimeException('Hold balance mismatch — cannot approve.');
+                        }
 
-$remarks='withdraw from realdealsmarketing Total Rs.'.$commision->amount.' and net payment Rs.'.$commision->net_payment ;
+                        $this->wallets->releaseHold($commision->member_id, $amount, WalletService::PRIMARY);
+                        $this->wallets->debit(
+                            $commision->member_id,
+                            WalletService::PRIMARY,
+                            $amount,
+                            [
+                                'transaction_type' => 'withdrawal',
+                                'reference_type' => 'commision_tables',
+                                'reference_id' => $commision->id,
+                                'remarks' => 'Withdrawal approved',
+                            ],
+                            'withdraw:approve:'.$commision->id,
+                            false
+                        );
 
-$mobileno=$user->phone;
+                        DB::table('imps_withdrawl')->insert([
+                            'user_id' => $commision->member_id,
+                            'amount' => round($commision->net_payment),
+                            'commission_table_id' => $commision->id,
+                            'status' => 'approved',
+                        ]);
+                    } else {
+                        $this->wallets->releaseHold($commision->member_id, $amount, WalletService::PRIMARY);
+                    }
 
-$myorderid= $user->unique_id;
+                    return CommisionTable::where('id', $id)->update([
+                        'request_status' => $request->input('status'),
+                    ]);
+                });
 
+                if ($result2) {
+                    return response()->json(['status' => true, 'success' => 'Withdraw Request status updated successfully']);
+                }
 
-
-//$url='https://zozowallet.com/api/payout/transfer?api_token=OntLAuAwcspa2yvR5ZZCTECnyMgdqVscm5Sqf8l6c687ksDc0Im47QuzguWO&beneficiary_name='.$beneficiary_name.'&account_number='.$beneficiary_account_no.'&ifsc='.$beneficiary_ifsc.'&mobile_number='.$beneficiary_mobile_no.'&amount='.$amount.'&client_id='.$myorderid.'';
-
-
-
-$curl = curl_init();
-
-curl_setopt_array($curl, array(
-  CURLOPT_URL => $url,
-  CURLOPT_RETURNTRANSFER => true,
-  CURLOPT_ENCODING => "",
-  CURLOPT_MAXREDIRS => 10,
-  CURLOPT_TIMEOUT => 30,
-  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-  CURLOPT_CUSTOMREQUEST => "GET",
-  CURLOPT_HTTPHEADER => array(
-    "cache-control: no-cache",
-  ),
-));
-
-$result = curl_exec($curl);
-$err = curl_error($curl);
-
-curl_close($curl);
-  
-echo $result;
-
-if($result){
-
-$jsondata = json_decode($result, true);
-$rcstatus = $jsondata['status'];
-
-
-
-
-if($rcstatus=='success'){
-
-$data=array(
-'user_id'=>$commision->member_id,
-'txid'=>$jsondata['orderid'],
-'amount'=>$amount,
-'commission_table_id'=>$commision->id,
-'status'=>$jsondata['status'],
-);
-
- $fetch_wallet=DB::table('wallet_primary')->select('user_id','balance')->where('user_id',$commision->member_id)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance-$commision->amount;
-  DB::table('wallet_primary')->where('user_id',$commision->member_id)->update(array('balance'=>$new_balance));
-  }
-
-
- $result2 = CommisionTable::where('id','=',$id)->update(array('request_status' => $request->input('status')));
-DB::table('imps_withdrawl')->insert($data);
-
-}else{
-    $data=array(
-'user_id'=>$commision->member_id,
-//'txid'=>$jsondata['orderid'],
-'amount'=>$amount,
-'commission_table_id'=>$commision->id,
-'status'=>$jsondata['status'],
-);
-
-
-
-DB::table('imps_withdrawl')->insert($data);
-
- 
-}
-
-
-}else{
-    
-    return response()->json(['status' => false, 'danger' => 'Something went wrong']);
-}
-}else{
-     $result2 = CommisionTable::where('id','=',$id)->update(array('request_status' => $request->input('status')));
-}
-          
-           
-           
-            if($result2) {
-                return response()->json(['status' => true, 'success' => 'Withdraw Request status  updated successfully']);
-                } else {
-                return response()->json(['status' => false, 'danger' => 'Error encounterd']);
+                return response()->json(['status' => false, 'danger' => 'Error encountered']);
+            } catch (\Throwable $e) {
+                return response()->json(['status' => false, 'danger' => $e->getMessage()]);
             }
-        } 
+        }
 }
 
 

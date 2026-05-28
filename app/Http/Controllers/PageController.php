@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Support\IncomeEngine;
 use App\Support\RegistrationSerialAllocator;
 use App\Models\Country;
+use App\Services\PackageProgressionService;
 use App\Services\WhatsApp\OtpService;
 use App\Services\WhatsApp\MetaCloudClient;
 use App\Services\WhatsApp\WelcomeTemplateParams;
@@ -397,6 +398,17 @@ public function get_sopnsor_name(Request $request){
   $exist_user=User::where('unique_id',$request->sponsor_id)->first();
   if($exist_user){
     $data['success']=$exist_user->name;
+    if (Auth::check()) {
+        $rows = app(PackageProgressionService::class)->packagesForUi($exist_user);
+        if (! empty($rows) && ! empty($rows[0]['package'])) {
+            $pkg = $rows[0]['package'];
+            $data['package'] = '<select name="pack" id="pack" class="custom-input" required>'
+                . '<option value="'.$pkg->id.'" selected>'
+                . $pkg->package_name.' — '.$pkg->price.' USDT'
+                . '</option>'
+                . '</select>';
+        }
+    }
   }else{
     $data['err']=true;
   }

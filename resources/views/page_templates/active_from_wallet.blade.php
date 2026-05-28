@@ -62,16 +62,23 @@
                 </div>
             </div>
             <div class="form-group d-flex flex-column gap-2">
-                <label for="example-text-input" class="font-14 regular text-white">Select
-                    Package</label>
+                <label for="example-text-input" class="font-14 regular text-white">Select Package</label>
                 <div class="" id="pack">
                     <select name="pack" id="pack" class="custom-input" required>
                         <option value="">Select Package</option>
-                        @foreach($pack as $pk)
-                        <option value="{{$pk->id}}">{{$pk->package_name}} </option>
+                        @if(isset($package_rows))
+                        @foreach($package_rows as $row)
+                        <option value="{{ $row['package']->id }}"
+                            {{ $row['eligible'] ? '' : 'disabled' }}
+                            {{ !empty($row['is_next']) ? 'selected' : '' }}>
+                            {{ $row['package']->package_name }} — {{ $row['package']->price }} USDT
+                            @if(!$row['eligible']) (locked) @endif
+                        </option>
                         @endforeach
+                        @endif
                     </select>
                 </div>
+                <small class="text-muted">Next eligible: Magic Pool {{ str_pad($next_package_id ?? 1, 2, '0', STR_PAD_LEFT) }}. Spendable topup: {{ $spendable_balance ?? 0 }} USDT</small>
             </div>
 
             <button type="submit" class="submit-button w-25  mt-2">Submit</button>
@@ -110,7 +117,9 @@
 
                     if (data.success) {
                         $('#member_name').val(data.success);
-                        $('#pack').html(data.package);
+                        if (data.package) {
+                            $('#pack').html(data.package);
+                        }
                         $('#sponsor_id_err').html('')
                     }
                     if (data.err) {

@@ -19,6 +19,8 @@ use App\Http\Controllers\RazorpayController;
 use App\Http\Controllers\Admin\WhatsappSettingsController;
 use App\Http\Controllers\Auth\RegistrationOtpController;
 use App\Http\Controllers\Auth\AddressOtpController;
+use App\Http\Controllers\PackageActivationController;
+use App\Http\Controllers\Admin\LapseIncomeController;
 
 
 
@@ -131,6 +133,8 @@ Route::prefix('admin')
             Route::get('/bank-details', [MemberController::class, 'bank_details'])->name('bank_details');
             Route::post('/bank-details-set', [MemberController::class, 'bank_details_set'])->name('bank_details.set');
 
+            Route::get('/lapse-income', [LapseIncomeController::class, 'index'])->name('lapse_income.index');
+
         });
     });
 
@@ -154,9 +158,9 @@ Route::middleware(['prevent-back-history'])->group(function () {
     Route::get('wallet-to-wallet-history', [ProfileController::class, 'wallet_to_wallet_transaction_history'])
         ->name('wallet_to_wallet_transaction_history');
 
-    Route::get('active-pin-from-wallet-view', [ProfileController::class, 'active_pin_from_wallet_view'])
+    Route::get('active-pin-from-wallet-view', [PackageActivationController::class, 'view'])
         ->name('active_pin_from_wallet_view');
-    Route::post('active-pin-from-wallet', [ProfileController::class, 'active_pin_from_wallet'])
+    Route::post('active-pin-from-wallet', [PackageActivationController::class, 'activate'])
         ->name('active_pin_from_wallet');
     Route::post('login-modal/dismiss', [ProfileController::class, 'dismissLoginModal'])
         ->name('user.login_modal.dismiss');
@@ -167,9 +171,7 @@ Route::middleware(['prevent-back-history'])->group(function () {
     Route::post('request-withdraw-transfer', [ProfileController::class, 'request_withdraw_tran'])
         ->name('request_withdraw_tran');
 
-    Route::get('get-community-bonus', [ProfileController::class, 'get_community_bonus'])->name('get_community_bonus');
-    Route::get('get-community-bonus-cron', [PageController::class, 'get_community_bonus_cron'])
-        ->name('get_community_bonus_cron');
+    // Community bonus: use artisan redragon:community-bonus (cron) — public GET removed for security
 
     // Auth / Pages
 

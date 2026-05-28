@@ -53,7 +53,6 @@ class SettingController extends Controller
                  
             }
 
-            //dd($request->logo->store('uploads','public'));
 
         }
         
@@ -78,7 +77,6 @@ class SettingController extends Controller
                  
             }
 
-            //dd($request->logo->store('uploads','public'));
 
         }
         

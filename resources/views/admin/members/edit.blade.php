@@ -34,13 +34,16 @@
                                 <a class="collapse-link pull-right"><i class="fa fa-chevron-up"></i></a></h3>
                             </div>
                             <div class="panel-body">
-                            {!! Form::Model($member,['autocomplete'=>'off','files'=> true,'id'=>'page', 'method' => 'PATCH','route' => ['admin.member.update',$member->id]]) !!}
-                                    @include('admin.members._partials.form') 
-                                    <div class="form-actions pull-right">
-                                        {!! Form::button('<i class="fa fa-pencil"></i> Update',['name' => 'Submit', 'type' => 'submit', 'value' => 'update', 'class' => 'btn btn-info btn-rounded']) !!}
-                                   
-                                    </div>
-                            {!! Form::close() !!}
+                            <form autocomplete="off" id="page" method="POST" action="{{ route('admin.member.update', $member->id) }}">
+                                @csrf
+                                @method('PATCH')
+                                @include('admin.members._partials.form')
+                                <div class="form-actions pull-right">
+                                    <button name="Submit" type="submit" value="update" class="btn btn-info btn-rounded">
+                                        <i class="fa fa-pencil"></i> Update
+                                    </button>
+                                </div>
+                            </form>
                             </div>
                         </div>
                         

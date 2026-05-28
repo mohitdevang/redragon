@@ -42,16 +42,18 @@
     // ============================================
     function animateCounter(element, target, duration = 2000) {
         const startTime = performance.now();
+        const isMoney = element.dataset.counterType === 'money';
+        const decimals = isMoney ? 2 : 0;
 
         function update(currentTime) {
             const progress = Math.min((currentTime - startTime) / duration, 1);
             const easeOut = 1 - Math.pow(1 - progress, 3);
-            const current = Math.floor(target * easeOut);
+            const current = target * easeOut;
+            const rendered = isMoney
+                ? current.toFixed(decimals)
+                : Math.floor(current).toLocaleString();
 
-            element.textContent =
-                (element.dataset.prefix || '') +
-                current.toLocaleString() +
-                (element.dataset.suffix || '');
+            element.textContent = (element.dataset.prefix || '') + rendered + (element.dataset.suffix || '');
 
             if (progress < 1) requestAnimationFrame(update);
         }
@@ -70,13 +72,15 @@
                 return;
             }
 
-            const value = parseInt(text.replace(/\D/g, ''), 10);
+            const normalized = text.replace(/,/g, '').replace(/[^0-9.\-]/g, '');
+            const value = parseFloat(normalized);
             if (Number.isNaN(value)) {
                 return;
             }
 
             if (text.includes('$')) counter.dataset.prefix = '$';
             if (text.includes('%')) counter.dataset.suffix = '%';
+            if (text.includes('$')) counter.dataset.counterType = 'money';
 
             animateCounter(counter, value);
         });

@@ -2,661 +2,321 @@
 @section('content')
 <style>
     .dt-layout-start,
-    .dt-layout-end,
-    .dt-layout-start,
     .dt-layout-end {
         display: none !important;
+    }
+
+    .pool-cell-hidden {
+        filter: blur(1.8px);
+        opacity: 0.45;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .pool-dynamic-table th,
+    .pool-dynamic-table td {
+        color: #ffffff !important;
+    }
+
+    .pool-dynamic-table thead tr:first-child th {
+        background: linear-gradient(0deg, #8f0d10 0%, #ff3b3ec4 100%) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    .pool-dynamic-table thead tr:nth-child(2) th {
+        background: linear-gradient(0deg, #730c0d 0%, #a810127a 100%) !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    .pool-dynamic-table tbody td {
+        background-color: #19191A !important;
+    }
+
+    .pool-dynamic-table .custom-footer th {
+        color: #F8E700 !important;
     }
 </style>
 
 <div class="content-page">
     <div class="col-md-12">
         <div class="glass-card">
-            @if(isset($daily_ad_view_income))
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Daily Add View income report</h2>
-            </div>
-
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <th>Sl no</th>
-                            <th>Date</th>
-                            <th>User Id</th>
-                            <th>Income</th>
-
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($daily_ad_view_income))
-                        @php($s=1)
-                        @foreach($daily_ad_view_income as $dc)
-
-                        <tr>
-                            <td>{{$s}}</td>
-                            <td>{{ date('d-m-Y',strtotime($dc->created_date))}}</td>
-                            <td>{{$dc->member_id}}</td>
-                            <td>{{$dc->amount}}</td>
-
-
-
-                        </tr>
-                        @php($s++)
+            @isset($daily_ad_view_income)
+                <div class="card-title-border"><h2 class="card-title">Daily Add View Income Report</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Sl no</th><th>Date</th><th>User Id</th><th>Income</th></tr></thead>
+                        <tbody>
+                        @foreach($daily_ad_view_income as $i => $dc)
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->created_date)) }}</td>
+                                <td>{{ $dc->member_id }}</td>
+                                <td>{{ number_format((float) $dc->amount, 2, '.', '') }}</td>
+                            </tr>
                         @endforeach
-                        @endif
-
-                    </tbody>
-                </table>
-            </div>
-
-            {{ $daily_ad_view_income->links() }}
-
-            @endif
-
-            @if(isset($level_ad_view_income))
-
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Level income report</h2>
-            </div>
-
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <th>Level</th>
-                            <th>Date</th>
-                            <th>User Id</th>
-                            <th>User Name</th>
-
-                            <th>Amount</th>
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($level_ad_view_income))
-                        @php($s=1)
-                        @foreach($level_ad_view_income as $dc)
-
-                        <tr>
-                            <td>{{$dc->rank}}</td>
-                            <td>{{ date('d-m-Y',strtotime($dc->created_date))}}</td>
-                            <td>{{$dc->direct_member_id}}</td>
-                            <td>{{get_user_details($dc->direct_member_id)}}</td>
-
-                            <td>{{$dc->amount}}</td>
-
-
-
-
-
-                        </tr>
-                        @php($s++)
-                        @endforeach
-                        @endif
-
-                    </tbody>
-                </table>
-            </div>
-            {{ $level_ad_view_income->links() }}
-
-            @endif
-
-
-            @if(isset($community_income_upline))
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Community Upline Income Report</h2>
-            </div>
-
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <!-- <th>Level</th> -->
-                            <th>Date</th>
-                            <th>User Id</th>
-                            <th>User Name</th>
-                            <th>Level</th>
-
-                            <th>Amount</th>
-
-                            <th>Wallet Amount</th>
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($community_income_upline))
-                        @php($s=1)
-                        @foreach($community_income_upline as $dc)
-
-                        <tr>
-                            <!-- <td>{{$dc->rank}}</td> -->
-                            <td>{{ date('d-m-Y',strtotime($dc->created_date))}}</td>
-                            <td>{{$dc->direct_member_id}}</td>
-                            <td>{{get_user_details($dc->direct_member_id)}}</td>
-                            <td>{{$dc->level}}</td>
-                            <td>{{$dc->amount}}</td>
-                            <td>{{$dc->in_wallet}}</td>
-
-
-
-
-
-                        </tr>
-                        @php($s++)
-                        @endforeach
-                        @endif
-
-                    </tbody>
-                </table>
-            </div>
-            {{ $community_income_upline->links() }}
-
-            @endif
-
-            @if(isset($community_income_downline))
-
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Community Downline Income Report</h2>
-            </div>
-
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <!-- <th>Level</th> -->
-                            <th>Date</th>
-                            <th>User Id</th>
-                            <th>User Name</th>
-
-                            <th>Level</th>
-
-                            <th>Amount</th>
-
-                            <th>Wallet Amount</th>
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($community_income_downline))
-                        @php($s=1)
-                        @foreach($community_income_downline as $dc)
-
-                        <tr>
-                            <!-- <td>{{$dc->rank}}</td> -->
-                            <td>{{ date('d-m-Y',strtotime($dc->created_date))}}</td>
-                            <td>{{$dc->direct_member_id}}</td>
-                            <td>{{get_user_details($dc->direct_member_id)}}</td>
-
-                            <td>{{$dc->level}}</td>
-                            <td>{{$dc->amount}}</td>
-                            <td>{{$dc->in_wallet}}</td>
-
-
-
-
-
-                        </tr>
-                        @php($s++)
-                        @endforeach
-                        @endif
-
-                    </tbody>
-                </table>
-            </div>
-            {{ $community_income_downline->links() }}
-
-            @endif
-
-
-            @if(isset($commision_majic_pool))
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Majic Pool Income Report</h2>
-            </div>
-            @php($groupedData = $commision_majic_pool->groupBy('package_id'))
-            @foreach ($groupedData as $packageId => $entries)
-            <div class="table-responsive table-wrapper mb-4">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <div class="item-magic d-flex align-items-center gap-2 px-3 py-1">
-                            <div class="d-flex align-items-center justify-content-center">
-                                <img src="{{url('/')}}/public/admin/assets/images/png/table-icon.png" alt="icon"
-                                    height="35">
-                            </div>
-                            <h5 class="mb-0 font-20 text-white medium">Magic Pool 01</h5>
-                        </div>
-                    </div>
-                    <div class="d-flex gap-3 align-items-center">
-                        <div class="item-entry w-auto h-auto px-3 py-2">
-                            <h5 class="mb-0 font-20 text-white medium">Entry Fee = 2$</h5>
-                        </div>
-                        <div class="item-view w-auto h-auto  px-3 py-2">
-                            <h5 class="mb-0 font-20 text-white medium">View Income</h5>
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <!-- Dynamic Header for Each Package -->
-                            <th colspan="8"> {{ $entries->first()->pack_package_name }} </th>
+                {{ $daily_ad_view_income->links() }}
+            @endisset
 
-
-                        </tr>
-                        <tr>
-                            <th>Level</th>
-                            <th>Entry</th>
-                            <th>Team</th>
-                            <th>Amount</th>
-                            <th>Upgrade</th>
-                            <th>Re-Birth</th>
-                            <th>Profit</th>
-                            <th>Cycle</th>
-                        </tr>
-                    </thead>
-                    <!-- <tbody>
-                        @php($s = 1)
-                        @foreach ($entries as $cmp)
-
-                        <tr>
-                            <td>{{ $cmp->level }}</td>
-                            <td><b>{{ $cmp->entry_fee }}</b></td>
-                            <td>{{ $cmp->team }}</td>
-                            <td>{{ $amt = $cmp->team * $cmp->entry_fee }}</td>
-                            <td>{{ $cmp->upgrade == 0 ? '-' : $cmp->upgrade }}</td>
-                            <td>{{ $cmp->re_birth == 0 ? '-' : $cmp->re_birth }}</td>
-                            <td>{{ $amt - $cmp->upgrade - $cmp->re_birth }}</td>
-                            <td>{{ $cmp->cycle }}</td>
-                        </tr>
-
-                        @if ($cmp->cycle > 1 && $cmp->level == 2)
-                        <?php
-                    // Calculate previous cycle and total previous income for Level 1
-                   
-                        $prev_cycle = $cmp->cycle - 1;
-                        $total_prev_income = $prev_cycle *  $cmp->pack_profit;
-                    
-                ?>
-                        <tr>
-                            <td colspan="8" style="text-align:right;">CYCLE - {{ $prev_cycle }} Total Income
-                                = {{ $total_prev_income }}</td>
-                        </tr>
-                        @endif
-
-                        @php($s++)
+            @isset($level_ad_view_income)
+                <div class="card-title-border"><h2 class="card-title">Level Income Report</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table id="example" class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Sl no</th><th>Level</th><th>Date</th><th>User Id</th><th>User Name</th><th>Amount</th></tr></thead>
+                        <tbody>
+                        @foreach($level_ad_view_income as $i => $dc)
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td>{{ $dc->rank }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->created_date)) }}</td>
+                                <td>{{ $dc->direct_member_id }}</td>
+                                <td>{{ get_user_details($dc->direct_member_id) }}</td>
+                                <td>{{ number_format((float) $dc->amount, 2, '.', '') }}</td>
+                            </tr>
                         @endforeach
-                    </tbody> -->
+                        </tbody>
+                    </table>
+                </div>
+                {{ $level_ad_view_income->links() }}
+            @endisset
 
-                    <tbody>
-                        <tr class="row-highlight">
-                            <td>1</td>
-                            <td>4.00</td>
-                            <td>0</td>
-                            <td>0</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>0</td>
-                            <td>1</td>
-                        </tr>
-
-                        <tr class="row-blur">
-                            <td>2</td>
-                            <td>4.00</td>
-                            <td>0</td>
-                            <td>0</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>0</td>
-                            <td>1</td>
-                        </tr>
-
-                        <tr class="row-blur">
-                            <td>3</td>
-                            <td>8.00</td>
-                            <td>0</td>
-                            <td>0</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>0</td>
-                            <td>1</td>
-                        </tr>
-                    <tfoot>
-                        <tr class="custom-footer">
-                              <th></th>
-                            <th></th>
-                               <th></th>
-                            <th></th>
-                            <th colspan="2" class="regular text-center" style="color: #F8E700;">
-                                 <img src="{{url('/')}}/public/admin/assets/images/svg/refresh.svg" alt="refresh">
-                                Cycle 1</th>
-                            <th colspan="2" class="regular text-center" style="color: #F8E700;">Income = 36 $</th>
-                         
-                        </tr>
-                    </tfoot>
-
-
-                    </tbody>
-                </table>
-            </div>
-            @endforeach
-
-
-            @endif
-
-
-
-            @if(isset($commision_majic_pool_history))
-
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Magic Pool History</h2>
-            </div>
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <th>Slno</th>
-                            <th>Date</th>
-                            <th>Package</th>
-                            <th>Cycle </th>
-
-                            <th>Level</th>
-
-                            <th>Income</th>
-
-
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($commision_majic_pool_history))
-                        @php($s=1)
-                        @foreach($commision_majic_pool_history as $dc)
-
-                        <tr>
-                            <td>{{$s}}</td>
-                            <td>{{ date('d-m-Y',strtotime($dc->date))}}</td>
-                            <td>{{$dc->pack_package_name}}</td>
-                            <td>{{$dc->cycle}}</td>
-
-                            <td>{{$dc->level}}</td>
-
-
-                            <td>{{$dc->profit_level}}</td>
-
-
-
-
-                        </tr>
-                        @php($s++)
+            @isset($community_income_upline)
+                <div class="card-title-border"><h2 class="card-title">Community Upline Income Report</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table id="example" class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Sl no</th><th>Date</th><th>User Id</th><th>User Name</th><th>Level</th><th>Amount</th><th>Wallet Amount</th></tr></thead>
+                        <tbody>
+                        @foreach($community_income_upline as $i => $dc)
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->created_date)) }}</td>
+                                <td>{{ $dc->direct_member_id }}</td>
+                                <td>{{ get_user_details($dc->direct_member_id) }}</td>
+                                <td>{{ $dc->level }}</td>
+                                <td>{{ number_format((float) $dc->amount, 2, '.', '') }}</td>
+                                <td>{{ number_format((float) $dc->in_wallet, 2, '.', '') }}</td>
+                            </tr>
                         @endforeach
-                        @endif
+                        </tbody>
+                    </table>
+                </div>
+                {{ $community_income_upline->links() }}
+            @endisset
 
-                    </tbody>
-                </table>
-            </div>
-            {{ $commision_majic_pool_history->links() }}
+            @isset($community_income_downline)
+                <div class="card-title-border"><h2 class="card-title">Community Downline Income Report</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table id="example" class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Sl no</th><th>Date</th><th>User Id</th><th>User Name</th><th>Level</th><th>Amount</th><th>Wallet Amount</th></tr></thead>
+                        <tbody>
+                        @foreach($community_income_downline as $i => $dc)
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->created_date)) }}</td>
+                                <td>{{ $dc->direct_member_id }}</td>
+                                <td>{{ get_user_details($dc->direct_member_id) }}</td>
+                                <td>{{ $dc->level }}</td>
+                                <td>{{ number_format((float) $dc->amount, 2, '.', '') }}</td>
+                                <td>{{ number_format((float) $dc->in_wallet, 2, '.', '') }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                {{ $community_income_downline->links() }}
+            @endisset
 
-            @endif
+            @isset($commision_majic_pool)
+                <div class="card-title-border"><h2 class="card-title">Magic Pool Income Report</h2></div>
+                @php
+                    $groupedData = collect($commision_majic_pool)->groupBy('package_id');
+                @endphp
+                @forelse($groupedData as $packageId => $entries)
+                    @php
+                        $byLevel = $entries->keyBy('level');
+                        $firstRow = $entries->first();
+                        $level1 = $byLevel->get(1);
+                        $level2 = $byLevel->get(2);
+                        $level3 = $byLevel->get(3);
+                        $level1Team = (int) ($level1->team ?? 0);
+                        $level2Team = (int) ($level2->team ?? 0);
+                        $level3Team = (int) ($level3->team ?? 0);
 
+                        $level2Unlocked = $level1Team >= 2;
+                        $level3Unlocked = $level2Team >= 4;
 
-            @if(isset($procust_purchase_income))
+                        $level1Completed = $level1Team >= 2;
+                        $level2Completed = $level2Team >= 4;
+                        $level3Completed = $level3Team >= 8;
+                        $completedCycles = \Illuminate\Support\Facades\DB::table('commision_majic_pool')
+                            ->where('user_id', Auth::guard()->user()->unique_id)
+                            ->where('packg_id', $packageId)
+                            ->where('level', 3)
+                            ->where('status', 'closed')
+                            ->count();
+                        $packageIncome = \Illuminate\Support\Facades\DB::table('commision_majic_pool')
+                            ->where('user_id', Auth::guard()->user()->unique_id)
+                            ->where('packg_id', $packageId)
+                            ->where('status', 'closed')
+                            ->sum('taxable_profit');
+                    @endphp
+                    <div class="table-responsive table-wrapper mb-4">
+                        <div class="d-flex justify-content-between">
+                            <div class="item-magic d-flex align-items-center gap-2 px-3 py-1">
+                                <img src="{{url('/')}}/public/admin/assets/images/png/table-icon.png" alt="icon" height="35">
+                                <h5 class="mb-0 font-20 text-white medium">{{ $firstRow->pack_package_name }}</h5>
+                            </div>
+                            <div class="d-flex gap-3 align-items-center">
+                                <div class="item-entry w-auto h-auto px-3 py-2">
+                                    <h5 class="mb-0 font-20 text-white medium">Entry Fee = {{ number_format((float) $firstRow->pack_price, 2, '.', '') }} $</h5>
+                                </div>
+                                <a href="{{ route('pool_income_report_history') }}" class="item-view w-auto h-auto px-3 py-2" style="text-decoration:none;">
+                                    <h5 class="mb-0 font-20 text-white medium">View Income</h5>
+                                </a>
+                            </div>
+                        </div>
+                        <table class="table table-striped table-bordered w-100 pool-dynamic-table">
+                            <thead>
+                                <tr><th colspan="8">{{ $firstRow->pack_package_name }}</th></tr>
+                                <tr><th>Level</th><th>Entry</th><th>Team</th><th>Amount</th><th>Upgrade</th><th>Re-Birth</th><th>Profit</th><th>Cycle</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr class="row-highlight">
+                                    <td>1</td>
+                                    <td>{{ number_format((float) ($level1->entry_fee ?? $firstRow->entry_fee_level_1 ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ $level1Team > 0 ? '' : 'pool-cell-hidden' }}">{{ $level1->team ?? 0 }}</td>
+                                    <td class="{{ $level1Completed ? '' : 'pool-cell-hidden' }}">{{ number_format((float) ($level1->amount ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ $level1Completed ? '' : 'pool-cell-hidden' }}">{{ (float) ($level1->upgrade ?? 0) > 0 ? number_format((float) $level1->upgrade, 2, '.', '') : '-' }}</td>
+                                    <td class="{{ $level1Completed ? '' : 'pool-cell-hidden' }}">{{ (float) ($level1->re_birth ?? 0) > 0 ? number_format((float) $level1->re_birth, 2, '.', '') : '-' }}</td>
+                                    <td class="{{ $level1Completed ? '' : 'pool-cell-hidden' }}">{{ number_format((float) ($level1->profit_level ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ $level1Completed ? '' : 'pool-cell-hidden' }}">{{ $level1->cycle ?? 0 }}</td>
+                                </tr>
+                                <tr class="{{ $level2Unlocked ? 'row-highlight' : 'row-blur' }}">
+                                    <td>2</td>
+                                    <td>{{ number_format((float) ($level2->entry_fee ?? $firstRow->entry_fee_level_2 ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ ($level2Unlocked && $level2Team > 0) ? '' : 'pool-cell-hidden' }}">{{ $level2->team ?? 0 }}</td>
+                                    <td class="{{ ($level2Unlocked && $level2Completed) ? '' : 'pool-cell-hidden' }}">{{ number_format((float) ($level2->amount ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ ($level2Unlocked && $level2Completed) ? '' : 'pool-cell-hidden' }}">{{ (float) ($level2->upgrade ?? 0) > 0 ? number_format((float) $level2->upgrade, 2, '.', '') : '-' }}</td>
+                                    <td class="{{ ($level2Unlocked && $level2Completed) ? '' : 'pool-cell-hidden' }}">{{ (float) ($level2->re_birth ?? 0) > 0 ? number_format((float) $level2->re_birth, 2, '.', '') : '-' }}</td>
+                                    <td class="{{ ($level2Unlocked && $level2Completed) ? '' : 'pool-cell-hidden' }}">{{ number_format((float) ($level2->profit_level ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ ($level2Unlocked && $level2Completed) ? '' : 'pool-cell-hidden' }}">{{ $level2->cycle ?? 0 }}</td>
+                                </tr>
+                                <tr class="{{ $level3Unlocked ? 'row-highlight' : 'row-blur' }}">
+                                    <td>3</td>
+                                    <td>{{ number_format((float) ($level3->entry_fee ?? $firstRow->entry_fee_level_3 ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ ($level3Unlocked && $level3Team > 0) ? '' : 'pool-cell-hidden' }}">{{ $level3->team ?? 0 }}</td>
+                                    <td class="{{ ($level3Unlocked && $level3Completed) ? '' : 'pool-cell-hidden' }}">{{ number_format((float) ($level3->amount ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ ($level3Unlocked && $level3Completed) ? '' : 'pool-cell-hidden' }}">{{ (float) ($level3->upgrade ?? 0) > 0 ? number_format((float) $level3->upgrade, 2, '.', '') : '-' }}</td>
+                                    <td class="{{ ($level3Unlocked && $level3Completed) ? '' : 'pool-cell-hidden' }}">{{ (float) ($level3->re_birth ?? 0) > 0 ? number_format((float) $level3->re_birth, 2, '.', '') : '-' }}</td>
+                                    <td class="{{ ($level3Unlocked && $level3Completed) ? '' : 'pool-cell-hidden' }}">{{ number_format((float) ($level3->profit_level ?? 0), 2, '.', '') }}</td>
+                                    <td class="{{ ($level3Unlocked && $level3Completed) ? '' : 'pool-cell-hidden' }}">{{ $level3->cycle ?? 0 }}</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="custom-footer">
+                                    <th></th><th></th><th></th><th></th>
+                                    <th colspan="2" class="regular text-center" style="color: #F8E700;">
+                                        <img src="{{url('/')}}/public/admin/assets/images/svg/refresh.svg" alt="refresh"> Cycle {{ $completedCycles }}
+                                    </th>
+                                    <th colspan="2" class="regular text-center" style="color: #F8E700;">Income = {{ number_format((float) $packageIncome, 2, '.', '') }} $</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                @empty
+                    <p class="text-white">No magic pool data found.</p>
+                @endforelse
+            @endisset
 
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Re-Purchase income report</h2>
-            </div>
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <th>Level</th>
-                            <th>Date</th>
-                            <th>User Id</th>
-                            <th>User Name</th>
+            @isset($commision_majic_pool_history)
+                <div class="card-title-border"><h2 class="card-title">Magic Pool History</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table id="example" class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Slno</th><th>Date</th><th>Package</th><th>Cycle</th><th>Level</th><th>Income</th></tr></thead>
+                        <tbody>
+                        @foreach($commision_majic_pool_history as $i => $dc)
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->date)) }}</td>
+                                <td>{{ $dc->pack_package_name }}</td>
+                                <td>{{ $dc->cycle }}</td>
+                                <td>{{ $dc->level }}</td>
+                                <td>{{ number_format((float) $dc->profit_level, 2, '.', '') }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                {{ $commision_majic_pool_history->links() }}
+            @endisset
 
-                            <th>Amount</th>
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($procust_purchase_income))
-                        @php($s=1)
+            @isset($procust_purchase_income)
+                <div class="card-title-border"><h2 class="card-title">Re-Purchase Income Report</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Level</th><th>Date</th><th>User Id</th><th>User Name</th><th>Amount</th></tr></thead>
+                        <tbody>
                         @foreach($procust_purchase_income as $dc)
-
-                        <tr>
-                            <td>{{$dc->rank}}</td>
-                            <td>{{ date('d-m-Y',strtotime($dc->created_date))}}</td>
-                            <td>{{$dc->direct_member_id}}</td>
-                            <td>{{get_user_details($dc->direct_member_id)}}</td>
-
-                            <td>{{$dc->amount}}</td>
-
-
-
-
-
-                        </tr>
-                        @php($s++)
+                            <tr>
+                                <td>{{ $dc->rank }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->created_date)) }}</td>
+                                <td>{{ $dc->direct_member_id }}</td>
+                                <td>{{ get_user_details($dc->direct_member_id) }}</td>
+                                <td>{{ number_format((float) $dc->amount, 2, '.', '') }}</td>
+                            </tr>
                         @endforeach
-                        @endif
+                        </tbody>
+                    </table>
+                </div>
+                {{ $procust_purchase_income->links() }}
+            @endisset
 
-                    </tbody>
-                </table>
-            </div>
-            {{ $procust_purchase_income->links() }}
-
-            @endif
-
-
-
-            @if(isset($direct_income))
-
-
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Direct income report</h2>
-            </div>
-
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <th>Sl no</th>
-                            <th>Date</th>
-                            <th>User Id</th>
-                            <th>User Name</th>
-                            <th>Level</th>
-                            <th>Amount</th>
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($direct_income))
-                        @php($s=1)
-                        @foreach($direct_income as $dc)
-
-                        <tr>
-                            <td>{{$s}}</td>
-                            <td>{{ date('d-m-Y',strtotime($dc->created_date))}}</td>
-                            <td>{{$dc->direct_member_id}}</td>
-                            <td>{{get_user_details($dc->direct_member_id)}}</td>
-                            <td>{{$dc->rank}}</td>
-                            <td>{{$dc->amount}}</td>
-
-
-
-
-
-                        </tr>
-                        @php($s++)
+            @isset($direct_income)
+                <div class="card-title-border"><h2 class="card-title">Direct Income Report</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table id="example" class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Sl no</th><th>Date</th><th>User Id</th><th>User Name</th><th>Level</th><th>Amount</th></tr></thead>
+                        <tbody>
+                        @foreach($direct_income as $i => $dc)
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->created_date)) }}</td>
+                                <td>{{ $dc->direct_member_id }}</td>
+                                <td>{{ get_user_details($dc->direct_member_id) }}</td>
+                                <td>{{ $dc->rank }}</td>
+                                <td>{{ number_format((float) $dc->amount, 2, '.', '') }}</td>
+                            </tr>
                         @endforeach
-                        @endif
+                        </tbody>
+                    </table>
+                </div>
+                {{ $direct_income->links() }}
+            @endisset
 
-                    </tbody>
-                </table>
-            </div>
-            {{ $direct_income->links() }}
-
-            @endif
-
-
-
-            @if(isset($reward_income))
-
-            <!-- Header -->
-            <div class="card-title-border">
-                <h2 class="card-title">Reward Income report</h2>
-            </div>
-            <div class="table-responsive table-wrapper">
-                <table id="example" class="table table-striped table-bordered w-100">
-                    <thead>
-                        <tr>
-                            <th>Sl no</th>
-                            <th>Date</th>
-                            <th>User Id</th>
-                            <th>Income</th>
-
-
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if(isset($reward_income))
-                        @php($s=1)
-                        @foreach($reward_income as $dc)
-
-                        <tr>
-                            <td>{{$s}}</td>
-                            <td>{{ date('d-m-Y',strtotime($dc->created_date))}}</td>
-                            <td>{{$dc->member_id}}</td>
-                            <td>{{$dc->amount}}</td>
-
-
-
-                        </tr>
-                        @php($s++)
+            @isset($reward_income)
+                <div class="card-title-border"><h2 class="card-title">Reward Income Report</h2></div>
+                <div class="table-responsive table-wrapper">
+                    <table class="table table-striped table-bordered w-100">
+                        <thead><tr><th>Sl no</th><th>Date</th><th>User Id</th><th>Income</th></tr></thead>
+                        <tbody>
+                        @foreach($reward_income as $i => $dc)
+                            <tr>
+                                <td>{{ $i + 1 }}</td>
+                                <td>{{ date('d-m-Y', strtotime($dc->created_date)) }}</td>
+                                <td>{{ $dc->member_id }}</td>
+                                <td>{{ number_format((float) $dc->amount, 2, '.', '') }}</td>
+                            </tr>
                         @endforeach
-                        @endif
-
-                    </tbody>
-                </table>
-            </div>
-
-            @endif
-
+                        </tbody>
+                    </table>
+                </div>
+                {{ $reward_income->links() }}
+            @endisset
         </div>
     </div>
-
-
-
 </div>
-
-
 @endsection
-@push('js')
-
-<script>
-
-    $(document).ready(function () {
-
-        $.validator.addMethod("emailRegex", function (value, element) {
-            if (/^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/.test(value)) { return true; } else { return false; }
-        }, "Please enter a valid Email.");
-
-        $.validator.addMethod("nameRegex", function (value, element) {
-            return this.optional(element) || /^([a-zA-Z_-\s]{3,20})$/.test(value);
-        }, "Enter valid name");
-
-
-        $("#register-form").validate({
-
-            errorElement: 'span',
-            errorClass: 'help-block',
-            highlight: function (element, errorClass, validClass) {
-                $(element).addClass("has-error");
-            },
-            unhighlight: function (element, errorClass, validClass) {
-                $(element).removeClass("has-error");
-            },
-            errorPlacement: function (error, element) {
-                if (element.attr("type") == "checkbox") {
-                    //error.insertAfter($(element).parent());
-                } else {
-                    error.insertAfter(element);
-                }
-            },
-
-            rules: {
-
-                name: {
-                    required: true,
-                    nameRegex: true
-                },
-
-                email: {
-                    required: true,
-                    emailRegex: true
-                },
-
-                userpwd: {
-                    required: true
-                },
-                cpws: {
-                    required: true,
-                    equalTo: "#userpwd"
-                },
-
-                phone: {
-                    required: true,
-                    minlength: 8,
-                    maxlength: 13,
-                    digits: true
-                },
-                sponsor_id: {
-                    required: true
-                },
-
-                sponsor_name: {
-                    required: true
-                },
-
-                country: {
-                    required: true
-                },
-
-            },
-
-
-
-        });
-
-    });
-
-
-
-    $(document).ready(function () {
-        $('#datatable-buttons-new').DataTable({
-
-            paging: false, // Disable pagination
-        });
-    });
-</script>
-
-
-
-
-@endpush

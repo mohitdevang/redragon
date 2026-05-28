@@ -2,6 +2,10 @@
 
 @section('content')
 
+@php
+    $fmtMoney = static fn ($value) => sprintf('%.2f', (float) $value);
+@endphp
+
 
 
 <!-- Welcome Banner -->
@@ -139,6 +143,16 @@
                 <span class="detail-label">My Rank</span>
                 <span class="detail-value highlight">One</span>
             </div>
+            <div class="detail-row">
+                <span class="detail-label">Current Active Package</span>
+                <span class="detail-value highlight">
+                    @if(!empty($current_package_name))
+                        {{ $current_package_name }} ({{ $fmtMoney($current_package_price ?? 0) }} USDT)
+                    @else
+                        Not Activated
+                    @endif
+                </span>
+            </div>
         </div>
     </div>
 
@@ -198,7 +212,7 @@
                         <p class="mb-0">Package bought today</p>
                     </div>
                 </div>
-                <div class="item-amount">+$0</div>
+                <div class="item-amount">+${{ $fmtMoney($today_package_purchase ?? 0) }}</div>
             </div>
 
             <div class="activity-item d-none">
@@ -220,7 +234,7 @@
                         <p class="mb-0">Return on investment</p>
                     </div>
                 </div>
-                <div class="item-amount">+$0</div>
+                <div class="item-amount">+${{ $fmtMoney($today_direct_income ?? 0) }}</div>
             </div>
 
             <div class="activity-item">
@@ -231,7 +245,7 @@
                         <p class="mb-0">Level bonus earned</p>
                     </div>
                 </div>
-                <div class="item-amount">+$0</div>
+                <div class="item-amount">+${{ $fmtMoney($today_level_income ?? 0) }}</div>
             </div>
 
             <div class="activity-item">
@@ -242,7 +256,7 @@
                         <p class="mb-0">Pool bonus earned today</p>
                     </div>
                 </div>
-                <div class="item-amount">+$0</div>
+                <div class="item-amount">+${{ $fmtMoney($today_pool_income ?? 0) }}</div>
             </div>
 
             <div class="activity-item">
@@ -253,7 +267,7 @@
                         <p class="mb-0">Community bonus earned</p>
                     </div>
                 </div>
-                <div class="item-amount">+$0</div>
+                <div class="item-amount">+${{ $fmtMoney($today_community_income ?? 0) }}</div>
             </div>
         </div>
 
@@ -307,7 +321,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Direct Partner Bonus</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($direct_income ?? 0) }}</div>
             </div>
             <div class="stat-icon cyan">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2">
@@ -325,7 +339,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Level Partner Bonus</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($level_income ?? 0) }}</div>
             </div>
             <div class="stat-icon magenta">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
@@ -341,7 +355,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Magic Pool Bonus</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($pool_income ?? 0) }}</div>
             </div>
             <div class="stat-icon purple">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
@@ -357,7 +371,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total GLOBAL COMMUNITY BONUS</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($community_income ?? 0) }}</div>
             </div>
             <div class="stat-icon success">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
@@ -380,7 +394,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Income Wallet</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($available_balance ?? 0) }}</div>
             </div>
             <div class="stat-icon cyan">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2">
@@ -397,7 +411,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Withdrawal</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($total_withdrawn ?? 0) }}</div>
             </div>
             <div class="stat-icon magenta">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
@@ -414,7 +428,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Available Balance</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($spendable_balance ?? 0) }}</div>
             </div>
             <div class="stat-icon purple">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
@@ -431,7 +445,7 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Top Up Wallet</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($Topup_balance ?? 0) }}</div>
             </div>
             <div class="stat-icon success">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
@@ -448,13 +462,47 @@
         <div class="stat-card-inner">
             <div class="stat-info">
                 <h3>Total Community Wallet</h3>
-                <div class="stat-value">$0</div>
+                <div class="stat-value">${{ $fmtMoney($Community_balance ?? 0) }}</div>
             </div>
             <div class="stat-icon success">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2">
                     <path d="M12 19V5" />
                     <path d="M19 12l-7-7-7 7" />
                     <circle cx="12" cy="16" r="1" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Purchased Fund -->
+    <div class="glass-card glass-card-3d stat-card">
+        <div class="stat-card-inner">
+            <div class="stat-info">
+                <h3>Total Purchased Fund</h3>
+                <div class="stat-value">${{ $fmtMoney($total_purchased_fund ?? 0) }}</div>
+            </div>
+            <div class="stat-icon magenta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2">
+                    <path d="M6 2h12l4 7-10 13L2 9l4-7z" />
+                    <path d="M2 9h20" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Top-Up Wallet Usage -->
+    <div class="glass-card glass-card-3d stat-card">
+        <div class="stat-card-inner">
+            <div class="stat-info">
+                <h3>Total Top-Up Wallet Usage</h3>
+                <div class="stat-value">${{ $fmtMoney($topup_wallet_usage ?? 0) }}</div>
+            </div>
+            <div class="stat-icon cyan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary-light)" stroke-width="2">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M5 6l1 14h12l1-14" />
+                    <path d="M10 11v6M14 11v6" />
                 </svg>
             </div>
         </div>

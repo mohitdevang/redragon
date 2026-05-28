@@ -15,7 +15,8 @@
                     <thead>
                         <tr>
                             <th>Slno</th>
-                            <th>Withdraw amount</th>
+                            <th>Withdraw Amount</th>
+                            <th>Deduction (10%)</th>
                             <th>Net Amount</th>
 
                             <th>Date</th>
@@ -32,9 +33,10 @@
                         @foreach($history as $his)
                         <tr>
                             <td>{{$s}}</td>
-                            <td>{{$his->amount}}</td>
+                            <td>{{ number_format((float) $his->amount, 2, '.', '') }}</td>
+                            <td>{{ number_format((float) ($his->taxable_amount ?? 0), 2, '.', '') }}</td>
 
-                            <td>{{$his->net_payment}}</td>
+                            <td>{{ number_format((float) $his->net_payment, 2, '.', '') }}</td>
 
                             <td>{{ date('d-m-Y h:i a',strtotime($his->updated_at)) }}</td>
                             <td>{{$his->request_status}}</td>

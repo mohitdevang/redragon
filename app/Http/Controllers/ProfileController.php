@@ -43,23 +43,31 @@ use App\Support\PackagePurchaseEngine;
 use App\Services\CommunitySerialMembers;
 use App\Models\WhatsappSetting;
 use App\Services\WhatsApp\OtpService;
+use App\Services\PackageProgressionService;
+use App\Services\Wallet\WalletService;
+use App\Services\Wallet\LapseIncomeService;
+use App\Services\Income\CommunityBonusService;
 class ProfileController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-         $this->setting = Setting::firstOrFail();
+    protected PackageProgressionService $packageProgression;
 
-   // $this->middleware('auth:web');
+    protected WalletService $wallets;
 
+    protected LapseIncomeService $lapseIncome;
 
-
+    public function __construct(
+        PackageProgressionService $packageProgression,
+        WalletService $wallets,
+        LapseIncomeService $lapseIncome
+    ) {
+        $this->packageProgression = $packageProgression;
+        $this->wallets = $wallets;
+        $this->lapseIncome = $lapseIncome;
+        $this->setting = Setting::firstOrFail();
+        $this->middleware('auth:web')->except([
+            'credentials',
+        ]);
     }
-
     /**
      * Show the application dashboard.
      *
@@ -137,6 +145,42 @@ if($Community_balance){
 
       $data['active_downline_user']=array_sum($this->display_children(Auth::guard()->user()->unique_id,0));
 
+      $primaryWallet = $this->wallets->getBalance($id, WalletService::PRIMARY);
+      $data['hold_balance'] = $primaryWallet['hold_balance'];
+      $data['spendable_balance'] = $primaryWallet['spendable'];
+      $data['today_income'] = DB::table('wallet_transactions')->where('user_id', $id)->where('direction', 'credit')->whereDate('created_at', date('Y-m-d'))->sum('amount');
+      $withdrawFromLedger = DB::table('wallet_transactions')
+          ->where('user_id', $id)
+          ->where('wallet_type', WalletService::PRIMARY)
+          ->where('direction', 'debit')
+          ->where('transaction_type', 'withdrawal')
+          ->sum('amount');
+      $withdrawLegacy = CommisionTable::where([['member_id', $id], ['type', 'debit'], ['request_status', 'approve']])->sum('amount');
+      $data['total_withdrawn'] = (float) ($withdrawFromLedger > 0 ? $withdrawFromLedger : $withdrawLegacy);
+      $today = date('Y-m-d');
+      $data['today_package_purchase'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'package_purchase')->whereDate('created_at', $today)->sum('amount');
+      $data['today_direct_income'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'direct_income')->whereDate('created_at', $today)->sum('amount');
+      $data['today_level_income'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'level_income')->whereDate('created_at', $today)->sum('amount');
+      $data['today_pool_income'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'magic_pool')->whereDate('created_at', $today)->sum('amount');
+      $data['today_community_income'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'community_bonus')->whereDate('created_at', $today)->sum('amount');
+      $data['ledger_direct'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'direct_income')->where('direction', 'credit')->sum('amount');
+      $data['ledger_level'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'level_income')->where('direction', 'credit')->sum('amount');
+      $data['ledger_pool'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'magic_pool')->where('direction', 'credit')->sum('amount');
+      $data['ledger_community'] = DB::table('wallet_transactions')->where('user_id', $id)->where('transaction_type', 'community_bonus')->where('direction', 'credit')->sum('amount');
+      $data['ledger_total_income'] = $data['ledger_direct'] + $data['ledger_level'] + $data['ledger_pool'] + $data['ledger_community'];
+      $data['current_package_name'] = DB::table('package')->where('id', (int) ($data['status']->package_id ?? 0))->value('package_name');
+      $data['current_package_price'] = DB::table('package')->where('id', (int) ($data['status']->package_id ?? 0))->value('price');
+      $data['total_purchased_fund'] = DB::table('wallet_transactions')
+          ->where('user_id', $id)
+          ->where('transaction_type', 'package_purchase')
+          ->where('direction', 'debit')
+          ->sum('amount');
+      $data['topup_wallet_usage'] = DB::table('wallet_transactions')
+          ->where('user_id', $id)
+          ->where('wallet_type', WalletService::SECONDARY)
+          ->where('direction', 'debit')
+          ->sum('amount');
+      $data['setting'] = $this->setting;
 
       return view('page_templates.dashboard',$data); 
         
@@ -184,7 +228,10 @@ public function pool_income_report()
         'package.id as package_id',   // Aliased the column to avoid ambiguity
         'package.profit as pack_profit',
         'package.price as pack_price',
-         'package.package_name as pack_package_name',
+        'package.package_name as pack_package_name',
+        'package.entry_fee_level_1',
+        'package.entry_fee_level_2',
+        'package.entry_fee_level_3'
    
 
     )
@@ -196,7 +243,8 @@ public function pool_income_report()
               ->where('commision_majic_pool.user_id', Auth::guard()->user()->unique_id)
               ->whereColumn('commision_majic_pool.packg_id', 'package.id');
     })
-->orderBy('entry_fee')
+->orderBy('package.id')
+->orderBy('commision_majic_pool.level')
 
     ->get();
        return view('page_templates.level_video_report',$data); 
@@ -1270,74 +1318,70 @@ else{
 
 public function request_withdraw(Request $request){
 
-    //  if(strtotime(date('H:i:s')) < strtotime($this->setting->withdraw_end_time) && strtotime(date('H:i:s')) > strtotime($this->setting->withdraw_start_time) ){
-
     if( Auth::guard()->user()->status=='active'){
+    $amount = (float) $request->amount;
+    if ($amount < 1) {
+        Session::flash('danger', 'Minimum Withdrawal is 1 USDT.');
+        return redirect()->route('withdraw_request_view');
+    }
 
-        $data=array(
-    'member_id'=>Auth::guard()->user()->unique_id,
-    'type'=>'debit',
-    'created_date'=>date('Y-m-d')    
-);
-   $exist = CommisionTable::where($data)->first();
-   if($exist){
-     Session::flash('danger', 'Only one withdraw can be done in same day');
+    $activeDirects = UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')
+        ->where('user_parents.parent_id', Auth::guard()->user()->unique_id)
+        ->where('users.status', 'active')
+        ->count();
+    if ($activeDirects < 2) {
+        Session::flash('danger', '2 active direct partners are compulsory for withdrawal.');
+        return redirect()->route('withdraw_request_view');
+    }
+
+   $pending = CommisionTable::where([
+       ['member_id', Auth::guard()->user()->unique_id],
+       ['type', 'debit'],
+       ['request_status', 'processing'],
+   ])->first();
+   if ($pending) {
+     Session::flash('danger', 'You already have a pending withdrawal request. Please wait for admin approval.');
      return redirect()->route('withdraw_request_view');
-   }else{
-  
+   }
 
-   $balance=DB::table('wallet_primary')->where('user_id',Auth::guard()->user()->unique_id)->first();
-if($balance){
-    $balance=$balance->balance;
-}
-else{
-    $balance=0;
-}
+   $wallet = $this->wallets->getBalance(Auth::guard()->user()->unique_id, WalletService::PRIMARY);
+   $kyc = User::where('unique_id','=',Auth::guard()->user()->unique_id)->first();
 
+if($wallet['spendable'] >= $amount  && $kyc->kys_status=='active'){
 
-
-     $kyc = User::where('unique_id','=',Auth::guard()->user()->unique_id)->first();
-
-   
-    
-    
- $active_direct_user=UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['parent_id',Auth::guard()->user()->unique_id],['status','!=','inactive'],['expire_date','>=',date('Y-m-d')]])->count();
-
-if($balance>=$request->amount  && $kyc->kys_status=='active'){
-
-
-                $amount=$request->amount-($request->amount*(10/100));
-                $taxable_amount=$request->amount*(10/100);
-          
-
-$amount=round($amount);
-$data=array(
-    'member_id'=>Auth::guard()->user()->unique_id,
-    'type'=>'debit',
-    'amount'=>$request->amount,
-    'request_status'=>'processing',
-    'tax'=>'10%',
-    'taxable_amount'=>$taxable_amount,
-    'net_payment'=>$amount,
-    
-    'created_date'=>date('Y-m-d'),
-);
-   $result = CommisionTable::create($data);
-    if($result){
-           Session::flash('success', 'Withdraw request sent successfully.'); 
-        } else {
-           Session::flash('danger', 'Error encounterd');
+try {
+    DB::transaction(function () use ($request) {
+        $uid = Auth::guard()->user()->unique_id;
+        if (! DB::table('wallet_primary')->where('user_id', $uid)->exists()) {
+            DB::table('wallet_primary')->insert(['user_id' => $uid, 'balance' => 0, 'hold_balance' => 0]);
         }
+        $this->wallets->addHold($uid, $amount, WalletService::PRIMARY);
+        $deduction = round($amount * 0.1, 2);
+        $net = round($amount - $deduction, 2);
+        CommisionTable::create([
+            'member_id' => $uid,
+            'type' => 'debit',
+            'amount' => $amount,
+            'request_status' => 'processing',
+            'tax' => '10%',
+            'taxable_amount' => $deduction,
+            'net_payment' => $net,
+            'created_date' => date('Y-m-d'),
+            'wallet_type' => 'p',
+        ]);
+    });
+    Session::flash('success', 'Withdraw request sent successfully. 10% software maintenance deduction applied and amount is on hold.');
+} catch (\Throwable $e) {
+    Session::flash('danger', $e->getMessage());
+}
 
 }else{
-    Session::flash('danger', 'Should upload KYC <br>4> Not more than your balance and must activate account');
+    Session::flash('danger', 'KYC must be active and amount cannot exceed spendable balance (available minus hold).');
 }
-
 
   return redirect()->route('withdraw_request_view');
-}
 }else{
-      Session::flash('danger', '1>Must activate account');
+      Session::flash('danger', 'Must activate account');
    return redirect()->route('withdraw_request_view');
 }
 // }else{
@@ -1755,7 +1799,13 @@ public function entry_magic_pool($user_id, $pack_id, $level, $cycle)
     $package = DB::table('package')->where('id', $pack_id)->first();
     
 
-    $exist = DB::table('pool_quee')->where([['user_id', $user_id],['pack_id',$pack_id]])->first();
+    $exist = DB::table('pool_quee')->where([
+        ['user_id', $user_id],
+        ['pack_id', $pack_id],
+        ['level', $level],
+        ['cycle', $cycle],
+        ['count', 0],
+    ])->first();
     if($exist){
  Session::flash('danger', 'This Package already activated');
         return redirect()->route('active_pin_from_wallet_view');
@@ -1832,13 +1882,9 @@ if($level==1){
 
              if ($level == 1) {
                 $required_mem = $package->level_1_team;
-
-
-            } if ($level == 2) {
+            } elseif ($level == 2) {
                 $required_mem = $package->level_2_team;
-
-
-            }else {
+            } else {
                 $required_mem = $package->level_3_team;
             }
 
@@ -1847,20 +1893,17 @@ $get_free_count = DB::table('pool_quee')
             ->where([['id', '<=', $last_id], ['pack_id', $pack_id], ['level', $level],['count',0]])
             ->count();
 
-echo ' Level-'.$level.' free member-'.$get_free_count.'<br>';
                 if($get_free_count>=$required_mem){
                      $get_parent = DB::table('pool_quee')
-            ->where([['pack_id', $pack_id], ['level', $level]])
+            ->where([['pack_id', $pack_id], ['level', $level], ['count', 0]])
             ->orderBy('id','asc')
             ->first();
                     $p_user=$get_parent;
                 }
 if(isset($p_user)){
-    echo 'Parent user '.$p_user->user_id.'<br>';
             $total_down_mem = DB::table('pool_quee')
                 ->where([['id', '>', $p_user->id], ['pack_id', $pack_id], ['level', $level],['count',0]])->limit($required_mem)->pluck('user_id');
-                
-echo 'total_down-'.count($total_down_mem).'<br>'.json_encode($total_down_mem).'Required-'.$required_mem.'<br>';
+
 $total_level_mem=count($total_down_mem);
 
 
@@ -1908,6 +1951,9 @@ else{
                 
                 $open_pool_user_details= DB::table('commision_majic_pool')
                 ->where([['user_id', $p_user->user_id], ['level', $level], ['status', 'open'],['packg_id',$pack_id]])->first();
+                if (! $open_pool_user_details) {
+                    return true;
+                }
 
                 if ($level == 1) {
                     //$this->entry_magic_pool($p_user->user_id, $pack_id, 2, $cycle);
@@ -1946,31 +1992,54 @@ else{
                       $data_update['profit_level']=$package->profit_level_3;
                      $next=1;
                 }
-            //update
-                     DB::table('commision_majic_pool')
-                ->where([['user_id', $p_user->user_id], ['level', $level], ['status', 'open'],['packg_id',$pack_id]])
-                ->update($data_update);
+            $poolTxKey = 'magic_pool:'.$p_user->user_id.':'.$pack_id.':'.$level.':'.$open_pool_user_details->cycle;
 
+            DB::transaction(function () use (
+                $p_user,
+                $pack_id,
+                $level,
+                $data_update,
+                $open_pool_user_details,
+                $amount_t,
+                $comm_wallet,
+                $poolTxKey
+            ) {
+                $poolRow = DB::table('commision_majic_pool')
+                    ->where('id', $open_pool_user_details->id)
+                    ->lockForUpdate()
+                    ->first();
 
-///add to community_wallet
- $fetch_wallet=DB::table('wallet_community')->select('user_id','balance')->where('user_id',$p_user->user_id)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance+$comm_wallet;
-  DB::table('wallet_community')->where('user_id',$p_user->user_id)->update(array('balance'=>$new_balance));
-  }else{
-        DB::table('wallet_community')->insert(array('balance'=>$comm_wallet,'user_id'=>$p_user->user_id));
-  }
+                if (! $poolRow || $poolRow->status !== 'open') {
+                    return;
+                }
 
+                DB::table('commision_majic_pool')
+                    ->where('id', $poolRow->id)
+                    ->update($data_update);
 
-  ///add to wallet
+                $this->wallets->credit($p_user->user_id, WalletService::COMMUNITY, $comm_wallet, [
+                    'income_type' => 'magic_pool',
+                    'transaction_type' => 'magic_pool',
+                    'package_id' => (int) $pack_id,
+                    'reference_type' => 'commision_majic_pool',
+                    'reference_id' => $poolRow->id,
+                    'remarks' => 'Magic pool L'.$level.' community share',
+                ], $poolTxKey.':community');
 
-  $fetch_wallet=DB::table('wallet_primary')->select('user_id','balance')->where('user_id',$p_user->user_id)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance+$amount_t;
-  DB::table('wallet_primary')->where('user_id',$p_user->user_id)->update(array('balance'=>$new_balance));
-  }else{
-        DB::table('wallet_primary')->insert(array('balance'=>$amount_t,'user_id'=>$p_user->user_id));
-  }
+                $this->wallets->credit($p_user->user_id, WalletService::PRIMARY, $amount_t, [
+                    'income_type' => 'magic_pool',
+                    'transaction_type' => 'magic_pool',
+                    'package_id' => (int) $pack_id,
+                    'reference_type' => 'commision_majic_pool',
+                    'reference_id' => $poolRow->id,
+                    'remarks' => 'Magic pool L'.$level.' profit',
+                ], $poolTxKey.':primary');
+
+                // Mark parent queue node as consumed so it cannot be selected again.
+                DB::table('pool_quee')
+                    ->where('id', $p_user->id)
+                    ->update(['count' => 1]);
+            });
  
 
 
@@ -1979,10 +2048,16 @@ else{
        
 
                  if(isset($del) && $del==1){
-                     DB::table('pool_quee')->where([['user_id', $p_user->user_id],['pack_id', $pack_id]])->delete();
+                     // Keep queue rows as processed history (count=1) for FIFO audit and rebirth traceability.
                 }
 
                  if(isset($pool_ent) && $pool_ent==1){
+                     if ($level == 3) {
+                         $poolUser = User::where('unique_id', $p_user->user_id)->first();
+                         if ($poolUser) {
+                             $this->packageProgression->unlockNextPackageAfterCycle($poolUser, (int) $pack_id);
+                         }
+                     }
                      $this->entry_magic_pool($l_user, $l_pk, $l_level, $l_cycle);
                 }
 
@@ -2002,11 +2077,14 @@ else{
   }
 
   $get_parent = UserParent::where('user_parents.user_id',$user_id)->first();
-$user=User::where([['unique_id',$get_parent->parent_id],['status','active']])->first();
+  if (! $get_parent) {
+      return true;
+  }
+$user=User::where('unique_id',$get_parent->parent_id)->first();
 
 
 $plan=CommisionPlan::where('id',37)->first();
-  if($user){
+  if($user && $plan){
  
 
 
@@ -2021,38 +2099,57 @@ $exist=DB::table('commision_direct')->where([['member_id',$get_parent->parent_id
 if(!$exist){
     DB::beginTransaction();
 
-    if($user->package_id<$package_id){
-       $result=DB::table('commision_direct')->insert(array('member_id'=>$get_parent->parent_id,'plan'=>$plan->id,'rank'=>$plan->plan_name,'target'=>$plan->member,'type'=>'not','amount'=>$amount,'taxable_amount'=>0,'created_date'=>date('Y-m-d'),'day_count'=>'1','income_type'=>'level','direct_member_id'=>$user_id,'status'=>'Not Achieved','direct_user_package'=>$package_id)); 
-
-
-
-    }else{
-    
-$result=DB::table('commision_direct')->insert(array('member_id'=>$get_parent->parent_id,'plan'=>$plan->id,'rank'=>$plan->plan_name,'target'=>$plan->member,'type'=>'credit','amount'=>$plan->commision,'taxable_amount'=>$amount,'created_date'=>date('Y-m-d'),'day_count'=>'1','income_type'=>'level','direct_member_id'=>$user_id,'status'=>'Achieved'));
-
-
-
-
-///add to community_wallet
- $fetch_wallet=DB::table('wallet_community')->select('user_id','balance')->where('user_id',$get_parent->parent_id)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance+$comm_wallet;
-  DB::table('wallet_community')->where('user_id',$get_parent->parent_id)->update(array('balance'=>$new_balance));
-  }else{
-        DB::table('wallet_community')->insert(array('balance'=>$comm_wallet,'user_id'=>$get_parent->parent_id));
-  }
-
-  
- ///add to wallet
-
-  $fetch_wallet=DB::table('wallet_primary')->select('user_id','balance')->where('user_id',$get_parent->parent_id)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance+$amount;
-  DB::table('wallet_primary')->where('user_id',$get_parent->parent_id)->update(array('balance'=>$new_balance));
-  }else{
-        DB::table('wallet_primary')->insert(array('balance'=>$amount,'user_id'=>$get_parent->parent_id));
-  }
- }
+    if ($user->package_id < $package_id) {
+        $rowId = DB::table('commision_direct')->insertGetId([
+            'member_id' => $get_parent->parent_id,
+            'plan' => $plan->id,
+            'rank' => $plan->plan_name,
+            'target' => $plan->member,
+            'type' => 'not',
+            'amount' => $amount,
+            'taxable_amount' => 0,
+            'created_date' => date('Y-m-d'),
+            'day_count' => '1',
+            'income_type' => 'direct',
+            'direct_member_id' => $user_id,
+            'status' => 'Not Achieved',
+            'direct_user_package' => $package_id,
+        ]);
+        $this->lapseIncome->recordLapse(
+            'direct',
+            $amount + $comm_wallet,
+            $user_id,
+            $get_parent->parent_id,
+            $package_id,
+            'Direct income lapsed — sponsor package lower than activating package',
+            'commision_direct',
+            $rowId,
+            'direct:lapse:'.$get_parent->parent_id.':'.$user_id.':'.$package_id
+        );
+    } else {
+        $rowId = DB::table('commision_direct')->insertGetId([
+            'member_id' => $get_parent->parent_id,
+            'plan' => $plan->id,
+            'rank' => $plan->plan_name,
+            'target' => $plan->member,
+            'type' => 'credit',
+            'amount' => $plan->commision,
+            'taxable_amount' => $amount,
+            'created_date' => date('Y-m-d'),
+            'day_count' => '1',
+            'income_type' => 'direct',
+            'direct_member_id' => $user_id,
+            'status' => 'Achieved',
+        ]);
+        $this->wallets->credit($get_parent->parent_id, WalletService::COMMUNITY, $comm_wallet, [
+            'income_type' => 'direct', 'transaction_type' => 'direct_income', 'package_id' => $package_id,
+            'source_user_id' => $user_id, 'reference_type' => 'commision_direct', 'reference_id' => $rowId,
+        ], 'direct:comm:'.$get_parent->parent_id.':'.$user_id.':'.date('Y-m-d'));
+        $this->wallets->credit($get_parent->parent_id, WalletService::PRIMARY, $amount, [
+            'income_type' => 'direct', 'transaction_type' => 'direct_income', 'package_id' => $package_id,
+            'source_user_id' => $user_id, 'reference_type' => 'commision_direct', 'reference_id' => $rowId,
+        ], 'direct:primary:'.$get_parent->parent_id.':'.$user_id.':'.date('Y-m-d'));
+    }
 
   // finish add wallet
   
@@ -2090,7 +2187,7 @@ $usr=User::where('unique_id',$parent_ids)->first();
 if(isset($usr) && ($usr->status=='active')){
 
 
-  $exist=DB::table('commision_level')->select('member_id','created_date','direct_member_id')->where([['member_id',$parent_ids],['created_date',date('Y-m-d')],['direct_member_id',Auth::guard()->user()->unique_id]])->first();
+  $exist=DB::table('commision_level')->select('member_id','created_date','direct_member_id')->where([['member_id',$parent_ids],['created_date',date('Y-m-d')],['direct_member_id',$user_id]])->first();
   
       if(!$exist){
 
@@ -2102,39 +2199,58 @@ $plan=CommisionPlan::where('level','=',$level_id)->first();
  $amount=$amount-$comm_wallet;
 
 
- if($usr->package_id<$package_id){
-    /// not achieved..
-
-DB::table('commision_level')->insert(array('member_id'=>$parent_ids,'plan'=>$plan->id,'rank'=>$plan->plan_name,'target'=>$plan->member,'type'=>'not','amount'=>$amount,'taxable_amount'=>$amount,'created_date'=>date('Y-m-d'),'day_count'=>'1','income_type'=>'level','direct_member_id'=>Auth::guard()->user()->unique_id,'status'=>'Not Achieved'));
-
-
+ if($usr->package_id < $package_id){
+    DB::transaction(function () use ($parent_ids, $plan, $amount, $comm_wallet, $user_id, $package_id, $level_id) {
+    $rowId = DB::table('commision_level')->insertGetId([
+        'member_id' => $parent_ids,
+        'plan' => $plan->id,
+        'rank' => $plan->plan_name,
+        'target' => $plan->member,
+        'type' => 'not',
+        'amount' => $amount,
+        'taxable_amount' => 0,
+        'created_date' => date('Y-m-d'),
+        'day_count' => '1',
+        'income_type' => 'level',
+        'direct_member_id' => $user_id,
+    ]);
+    $this->lapseIncome->recordLapse(
+        'level',
+        $amount + $comm_wallet,
+        $user_id,
+        $parent_ids,
+        $package_id,
+        'Level-'.$level_id.' income lapsed — upline package lower than activating package',
+        'commision_level',
+        $rowId,
+        'level:lapse:'.$parent_ids.':'.$user_id.':'.$level_id.':'.date('Y-m-d')
+    );
+    });
  }else{
-
-DB::table('commision_level')->insert(array('member_id'=>$parent_ids,'plan'=>$plan->id,'rank'=>$plan->plan_name,'target'=>$plan->member,'type'=>'not','amount'=>$amount,'taxable_amount'=>$amount,'created_date'=>date('Y-m-d'),'day_count'=>'1','income_type'=>'level','direct_member_id'=>Auth::guard()->user()->unique_id));
-
-
-
-//add to community_wallet
- $fetch_wallet=DB::table('wallet_community')->select('user_id','balance')->where('user_id',$parent_ids)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance+$comm_wallet;
-  DB::table('wallet_community')->where('user_id',$parent_ids)->update(array('balance'=>$new_balance));
-  }else{
-        DB::table('wallet_community')->insert(array('balance'=>$comm_wallet,'user_id'=>$parent_ids));
-  }
-
-
-  ///add to wallet
-
-  $fetch_wallet=DB::table('wallet_primary')->select('user_id','balance')->where('user_id',$parent_ids)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance+$amount;
-  DB::table('wallet_primary')->where('user_id',$parent_ids)->update(array('balance'=>$new_balance));
-  }else{
-        DB::table('wallet_primary')->insert(array('balance'=>$amount,'user_id'=>$parent_ids));
-  }
-
-}
+    DB::transaction(function () use ($parent_ids, $plan, $amount, $comm_wallet, $user_id, $package_id, $level_id) {
+    $rowId = DB::table('commision_level')->insertGetId([
+        'member_id' => $parent_ids,
+        'plan' => $plan->id,
+        'rank' => $plan->plan_name,
+        'target' => $plan->member,
+        'type' => 'credit',
+        'amount' => $amount,
+        'taxable_amount' => $amount,
+        'created_date' => date('Y-m-d'),
+        'day_count' => '1',
+        'income_type' => 'level',
+        'direct_member_id' => $user_id,
+    ]);
+    $this->wallets->credit($parent_ids, WalletService::COMMUNITY, $comm_wallet, [
+        'income_type' => 'level', 'transaction_type' => 'level_income', 'package_id' => $package_id,
+        'source_user_id' => $user_id, 'reference_type' => 'commision_level', 'reference_id' => $rowId,
+    ], 'level:comm:'.$parent_ids.':'.$user_id.':'.$level_id.':'.date('Y-m-d'));
+    $this->wallets->credit($parent_ids, WalletService::PRIMARY, $amount, [
+        'income_type' => 'level', 'transaction_type' => 'level_income', 'package_id' => $package_id,
+        'source_user_id' => $user_id, 'reference_type' => 'commision_level', 'reference_id' => $rowId,
+    ], 'level:primary:'.$parent_ids.':'.$user_id.':'.$level_id.':'.date('Y-m-d'));
+    });
+ }
 
 
 }
@@ -2153,34 +2269,7 @@ return true;
 
 
 function get_community_bonus(){
-    if (! IncomeEngine::enabled()) {
-        \Log::info('Community bonus skipped — income engine disabled.');
-
-        return;
-    }
-    \Log::info("Community bonus Upload started..");
-    $wallet=DB::table('wallet_community')->where('balance','>',0)->get();
-    foreach ($wallet as $wall) {
-
-        DB::table('wallet_community_history')->insert(array('user_id'=>$wall->user_id,'balance'=>$wall->balance,'updated_at'=>date('Y-m-d')));
-
- 
-        $amount=($wall->balance*(1/100));
-
-         $usr = User::select('parent_id')->where('unique_id', $wall->user_id)->first();
-
-$this->get_upline_member($wall->user_id,50,$amount,$wall->user_id,$wall->balance,$usr->package_id);
-
-
-
-$this->get_downline_member($wall->user_id,50,$amount,$wall->user_id,$wall->balance,$usr->package_id);
-
-DB::table('wallet_community')->where('user_id',$wall->user_id)->update(array('balance'=>0));
-       
-    }
-        \Log::info("Community bonus Upload finished..");
-
-
+    app(CommunityBonusService::class)->run(date('Y-m-d'));
 }
 
 
@@ -2423,7 +2512,6 @@ $plan=CommisionPlan::where('level','=',$level)->first();
     
      $usesrs = UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['user_parents.parent_id',$parent]])->get();
 
-//dd($usesrs );
 if(isset($usesrs[0])){
         foreach($usesrs as $user)
         {
@@ -2473,32 +2561,18 @@ DB::table('commision_level')->insert(array('member_id'=>$earner,'plan'=>$plan->i
 
  
 
- public function active_pin_from_wallet_view(Request $request){
-       $data['pack']=DB::table('package')
-    ->where('id', '>', Auth::guard()->user()->package_id)
-    ->where(function ($q) {
-        $q->where('status', 'active')->orWhereNull('status');
-    })
-    ->orderBy('id')
-    ->limit(1)
-    ->get();
-           $wallet=DB::table('wallet_secondary')->select('user_id','balance')->where('user_id',Auth::guard()->user()->unique_id)->first();
-           
-           
-      if($wallet){
-      $data['balance']=$wallet->balance;
-      }else{
-           $data['balance']=0;
-      }
+ public function active_pin_from_wallet_view(Request $request)
+ {
+     $user = Auth::guard()->user();
+     $secondary = $this->wallets->getBalance($user->unique_id, WalletService::SECONDARY);
+     $data['balance'] = $secondary['balance'];
+     $data['spendable_balance'] = $secondary['spendable'];
+     $data['package_rows'] = $this->packageProgression->packagesForUi($user);
+     $data['package_purchase_enabled'] = PackagePurchaseEngine::enabled();
+     $data['next_package_id'] = $this->packageProgression->nextPurchasablePackageId($user);
 
-      $data['package_purchase_enabled'] = PackagePurchaseEngine::enabled();
-      
-     
-
-       
-       return view('page_templates.active_from_wallet',$data);
-       
-     }
+     return view('page_templates.active_from_wallet', $data);
+ }
 
     public function dismissLoginModal(Request $request)
     {
@@ -2596,15 +2670,9 @@ $data=array(
 
 
   public function wallet_to_wallet(Request $request){
-       
-           $wallet=DB::table('wallet_secondary')->select('user_id','balance')->where('user_id',Auth::guard()->user()->unique_id)->first();
-           
-           
-      if($wallet){
-      $data['balance']=$wallet->balance;
-      }else{
-           $data['balance']=0;
-      }
+       $wallet = $this->wallets->getBalance(Auth::guard()->user()->unique_id, WalletService::SECONDARY);
+       $data['balance'] = $wallet['balance'];
+       $data['spendable_balance'] = $wallet['spendable'];
 
 
        
@@ -2618,87 +2686,80 @@ $data=array(
       
     if(Auth::guard()->user()->status=='active'){
 
-  
-            $wallet=DB::table('wallet_secondary')->select('user_id','balance')->where('user_id',Auth::guard()->user()->unique_id)->first();
-      if($wallet){
-      $balance=$wallet->balance;
-      }else{
-           $balance=0;
-}
- 
+            $senderId = Auth::guard()->user()->unique_id;
 
-    
-    
-//  $active_direct_user=UserParent::join('users', 'users.unique_id', '=', 'user_parents.user_id')->where([['parent_id',Auth::guard()->user()->unique_id],['status','!=','inactive'],['expire_date','>=',date('Y-m-d')]])->count();
-// if($active_direct_user>=$direct){
-if($balance>=$request->amount){
+            $pendingWithdraw = CommisionTable::where([
+                ['member_id', $senderId],
+                ['type', 'debit'],
+                ['request_status', 'processing'],
+            ])->exists();
+            if ($pendingWithdraw) {
+                Session::flash('danger', 'Cannot transfer while a withdrawal request is pending.');
 
+                return redirect()->route('wallet_to_wallet');
+            }
+
+            $wallet = $this->wallets->getBalance($senderId, WalletService::SECONDARY);
+
+if($wallet['spendable'] >= $request->amount){
 
                 $amount=$request->amount;
-                $taxable_amount=0;
-          
+                $net_payment=$amount;
 
+try {
+    DB::transaction(function () use ($request, $senderId, $net_payment) {
+        $recipientId = $request->member_unique_id;
+        $txKey = 'wtw:'.$senderId.':'.$recipientId.':'.time();
 
-$net_payment=$amount;
-$data=array(
-    'member_id'=>$request->member_unique_id,
-    'type'=>'credit',
-    'amount'=>$request->amount,
-    'request_status'=>'approve',
-    'tax'=>'0',
-    'taxable_amount'=>$taxable_amount,
-    'net_payment'=>$net_payment,
-    'plan'=>0,
-    'created_date'=>date('Y-m-d'),
-    'remark'=>'Credited for wallet to wallet Transfer',
-    'downline_member'=>Auth::guard()->user()->unique_id,
-    'wallet_type'=>'s',
-     'transaction_type'=>'wtw',
-);
+        CommisionTable::create([
+            'member_id' => $recipientId,
+            'type' => 'credit',
+            'amount' => $request->amount,
+            'request_status' => 'approve',
+            'tax' => '0',
+            'taxable_amount' => 0,
+            'net_payment' => $net_payment,
+            'plan' => 0,
+            'created_date' => date('Y-m-d'),
+            'remark' => 'Credited for wallet to wallet Transfer',
+            'downline_member' => $senderId,
+            'wallet_type' => 's',
+            'transaction_type' => 'wtw',
+        ]);
 
-    DB::beginTransaction();
+        CommisionTable::create([
+            'member_id' => $senderId,
+            'type' => 'debit',
+            'amount' => $request->amount,
+            'request_status' => 'approve',
+            'tax' => '0',
+            'taxable_amount' => 0,
+            'net_payment' => $net_payment,
+            'plan' => 0,
+            'created_date' => date('Y-m-d'),
+            'remark' => 'Debited for wallet to wallet Transfer',
+            'downline_member' => $recipientId,
+            'wallet_type' => 's',
+            'transaction_type' => 'wtw',
+        ]);
 
-   $result = CommisionTable::create($data);
-   
-   
+        $this->wallets->credit($recipientId, WalletService::SECONDARY, $net_payment, [
+            'transaction_type' => 'p2p_transfer',
+            'counterparty_user_id' => $senderId,
+            'remarks' => 'P2P credit',
+        ], $txKey.':credit');
 
-   ///add to wallet
-  $fetch_wallet=DB::table('wallet_secondary')->select('user_id','balance')->where('user_id',$request->member_unique_id)->first();
-  if($fetch_wallet){
-       $new_balance=$fetch_wallet->balance+$net_payment;
-  DB::table('wallet_secondary')->where('user_id',$request->member_unique_id)->update(array('balance'=>$new_balance));
-  }else{
-        DB::table('wallet_secondary')->insert(array('balance'=>$net_payment,'user_id'=>$request->member_unique_id));
-  }
-  
-  
-  
-  
-  $data2=array(
-    'member_id'=>Auth::guard()->user()->unique_id,
-    'type'=>'debit',
-    'amount'=>$request->amount,
-    'request_status'=>'approve',
-    'tax'=>'0',
-    'taxable_amount'=>$taxable_amount,
-    'net_payment'=>$net_payment,
-    'plan'=>0,
-    'created_date'=>date('Y-m-d'),
-    'remark'=>'Debited for wallet to wallet Transfer',
-    'downline_member'=>$request->member_unique_id,
-    'wallet_type'=>'s',
-    'transaction_type'=>'wtw',
-);
-$result = CommisionTable::create($data2);
-  //Deduct.....
-   $fetch_primary_wallet=DB::table('wallet_secondary')->select('user_id','balance')->where('user_id',Auth::guard()->user()->unique_id)->first();
-  if($fetch_primary_wallet){
-       $new_balance_primary=$fetch_primary_wallet->balance-$net_payment;
-        DB::table('wallet_secondary')->where('user_id',Auth::guard()->user()->unique_id)->update(array('balance'=>$new_balance_primary));
-  }
-  // finish add wallet
-  
-   DB::commit();
+        $this->wallets->debit($senderId, WalletService::SECONDARY, $net_payment, [
+            'transaction_type' => 'p2p_transfer',
+            'counterparty_user_id' => $recipientId,
+            'remarks' => 'P2P debit',
+        ], $txKey.':debit', false);
+    });
+    $result = true;
+} catch (\Throwable $e) {
+    $result = false;
+    Session::flash('danger', $e->getMessage());
+}
    
     if($result){
            Session::flash('success', 'Wallet to Wallet Transfer done successfully.'); 
@@ -2707,12 +2768,8 @@ $result = CommisionTable::create($data2);
         }
 
 }else{
-    Session::flash('danger', '1> Not more than your balance and must activate account ');
+    Session::flash('danger', 'Amount exceeds spendable topup balance.');
 }
-// }else{
-//     Session::flash('danger', '1>Amount should be grater than or equal 100 & less than 55000 .<br> 2> 3 active direct member must for withdraw<br>  3>Should upload KYC <br>4> Not more than your balance and must activate account
-//     <br>5> Upgrade your package by activating PIN');
-// }
 
   return redirect()->route('wallet_to_wallet');
 }

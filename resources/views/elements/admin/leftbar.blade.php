@@ -71,6 +71,10 @@ Withdraw<i class="fa fa-fw fa-caret-down"></i></a>
                       
                     </li>
 
+                    <li>
+                        <a href="{{ route('admin.lapse_income.index') }}"><i class="fa fa-history"></i> Lapse Income History</a>
+                    </li>
+
                     <li class="hidden">
                         <a href="javascript:;" data-toggle="collapse" data-target="#collapse3"><i class="fa fa-thumb-tack" aria-hidden="true"></i> Pin Generation <i class="fa fa-fw fa-caret-down"></i></a>
                         <ul id="collapse3" class="collapse left-design">
